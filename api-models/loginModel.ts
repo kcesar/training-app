@@ -6,6 +6,7 @@ export interface LoginResult {
   name: string,
   email: string,
   domain: string,
+  isTrainee?: boolean,
   picture?: string,
   error: undefined,
 }

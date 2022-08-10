@@ -12,24 +12,13 @@ import EventDetailStore from './eventDetailStore';
 import EventViewModel, { eventToViewModel } from '../models/eventViewModel';
 import ResponderViewModel, { responderToViewModel } from '../models/responderViewModel';
 import UserViewModel, { loginToViewModel } from '../models/userViewModel';
-import ResponseStore from './responseStore';
+import TraineeStore from './traineeStore';
 import { formatISO, startOfMinute } from 'date-fns';
 import { AppChrome } from '../models/appChromeContext';
 
 interface SiteConfig {
   clientId: string
 }
-
-interface UnitDefn {
-  id: string,
-  name:string,
-}
-
-interface SiteTeam {
-  name: string,
-  background: string
-}
-
 
 class Store implements AppChrome {
   @observable route: { location: Location, params?: Params<string> } = { location: {
@@ -46,11 +35,8 @@ class Store implements AppChrome {
   @observable isOnline: boolean = navigator.onLine;
   @observable user?: UserViewModel;
   @observable loginError?: string;
-  @observable units: UnitDefn[] = [];
 
   @observable config: SiteConfig = { clientId: '' };
-
-  @observable private siteTeam?: SiteTeam;
 
   @observable events: EventViewModel[] = [];
   @observable responses: ResponderViewModel[] = [];
@@ -65,20 +51,16 @@ class Store implements AppChrome {
       const res = (await Api.get<{data: ResponderModel[]}>("/api/v1/responses")).data;
       runInAction(() => this.responses = res.map((r :ResponderModel) => responderToViewModel(r)));
     })
-    this.mapUnitResponder = this.mapUnitResponder.bind(this);
   }
 
   async start() {
     window.addEventListener('online', this.setOfflineStatus)
     window.addEventListener('offline', this.setOfflineStatus)
-    const response = await Api.get<{config: SiteConfig, user: LoginResult, units: UnitDefn[], siteTeam?: SiteTeam}>('/api/boot');
+    const response = await Api.get<{config: SiteConfig, user: LoginResult}>('/api/boot');
     runInAction(() => {
       this.config = response.config as SiteConfig;
       this.user = loginToViewModel(response.user);
-      this.units = response.units;
       this.started = true;
-
-      this.siteTeam = response.siteTeam;
     });
   }
 
@@ -129,30 +111,6 @@ class Store implements AppChrome {
   }
 
   @action.bound
-  async respondToEvent(event: EventViewModel, when?: Date) {
-    if (!this.user) {
-      throw new Error('User not logged in');
-    }
-
-    const eventUnit = event.units.find(u => u.name === this.siteTeam?.name);
-    if (!eventUnit) {
-      alert('Response joins unit to event.');
-      return;
-    }
-
-    const data :Omit<ResponderModel, 'id'> = {
-      name: this.user.name,
-      email: this.user.email,
-      eventId: event.id,
-      unitId: eventUnit.id,
-      eta: when ? formatISO(startOfMinute(when)) : undefined,
-      responding: when ? undefined : formatISO(startOfMinute(new Date())),
-    };
-
-    const response = await Api.post('/api/v1/responses', data);
-  }
-
-  @action.bound
   syncRoute(location: Location, params?: Params<string>) {
     this.route = ({ location, params });
   }
@@ -165,8 +123,8 @@ class Store implements AppChrome {
     return new EventEditStore(this);
   }
 
-  getResponseStore() {
-    return new ResponseStore(this);
+  getTraineeStore() {
+    return new TraineeStore(this);
   }
   
   @computed
@@ -181,47 +139,11 @@ class Store implements AppChrome {
     const t = (
       {
         palette: {
-          primary: { main: this.siteTeam?.background ?? '#0000ff' },
+          primary: { main: 'rgb(21, 69, 21)' },
         },
       }
     );
     return createTheme(t);
-  }
-
-  @computed
-  get teamName() {
-    return this.siteTeam?.name ?? 'KCSARA';
-  }
-
-  @computed
-  get siteName() {
-    return `${this.teamName} Check-In`;
-  }
-
-  @computed
-  get missions() {
-    return this.events
-      .filter(f => f.isMission)
-      .map(this.mapUnitResponder)
-      .sort(Store.sortEvents);
-  }
-
-  @computed
-  get otherEvents() {
-    return this.events
-      .filter(f => !f.isMission)
-      .map(this.mapUnitResponder)
-      .sort(Store.sortEvents);
-  }
-
-  mapUnitResponder(e: EventViewModel) :EventViewModel {
-    return ({ ...e, myUnitResponding: e.units.filter(u => u.name === this.siteTeam?.name).length > 0 });
-  }
-
-  static sortEvents(a :EventViewModel, b :EventViewModel) :number {
-    if (a.startAt < b.startAt) return 1;
-    if (b.startAt < a.startAt) return -1;
-    return 0;
   }
 }
 

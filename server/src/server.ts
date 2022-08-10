@@ -1,6 +1,5 @@
 import express from 'express';
 import session from 'express-session';
-import morgan from 'morgan';
 import SequelizeStoreBuilder from 'connect-session-sequelize';
 
 import './types';
@@ -12,14 +11,9 @@ import WorkspaceClient from './googleWorkspace';
 import { OAuth2Client, TokenPayload } from 'google-auth-library';
 import DBRepo from './db/dbRepo';
 import { sequelize } from './db/dbBuilder';
-import { addAccountApi } from './api/accountApi';
 
-import EventModel from '../../api-models/eventModel';
-import { EventRow } from './db/eventRow';
-import { EventUnitRow } from './db/eventUnitRow';
 import { existsSync, readFileSync } from 'fs';
 import { createLogger } from './logging';
-import { addEventsApi } from './api/eventsApi';
 import { addAuthApi } from './api/authApi';
 
 configEnv({path: './.env.local'});
@@ -51,8 +45,6 @@ async function boot() {
   const app = express();
   const port = 5021; // default port to listen
 
-  //app.use(morgan("combined", { stream: (expressLog.stream as any).write }));
-
   app.use(express.json());
 
   app.use(session({
@@ -68,27 +60,21 @@ async function boot() {
   if (!process.env.DB_HOST) await sequelize.sync();
   const db = new DBRepo();
 
-
   app.get('/api/boot', async (req, res) => {
-    const siteDomain = ((req.headers['x-forwarded-host'] ?? req.headers['host']) as string).split(':')[0];
-    const hostRow = await db.getHost(siteDomain);
     if (!req.session?.auth && existsSync('local-auth.json')) {
       expressLog.info('using debug login credentials in local-auth.json');
       req.session.auth = JSON.parse(readFileSync('local-auth.json', 'utf8'));
     }
 
     res.json({
-      siteTeam: hostRow ? { name: hostRow.name, color: hostRow.color, background: hostRow.background } : undefined,
       user: userFromAuth(req.session.auth),
       config: { clientId: process.env.AUTH_CLIENT }
     })
   });
 
   addAuthApi(app, authClient, workspaceClient);
-  addAccountApi(app, db);
-  addEventsApi(app, db);
 
-  ;[
+  [
     '/favicon.ico',
     '/logo192.png',
     '/manifest.json',
@@ -103,7 +89,6 @@ async function boot() {
 
   // start the Express server
   app.listen(port, () => {
-    // tslint:disable-next-line:no-console
     expressLog.info(`server started at http://localhost:${port}`);
   });
 }

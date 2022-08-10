@@ -10,7 +10,7 @@ import { runInAction } from 'mobx';
 import { AppBar, Box, Container, IconButton, Menu, MenuItem, Toolbar, Typography } from '@mui/material';
 import { AccountCircle } from '@mui/icons-material';
 import { useContext } from 'react';
-import { AppChromeContext } from '../models/appChromeContext';
+import { AppChrome, AppChromeContext } from '../models/appChromeContext';
 import { MobxRouteSync } from './MobxRouteSync';
 
 export const TopBar = observer((props: {}) => {
@@ -24,7 +24,7 @@ export const TopBar = observer((props: {}) => {
     <AppBar>
     <Toolbar>
       <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-        {appChrome.siteName}
+        KCESAR Basic Training
       </Typography>
       {appChrome.user && (
       <div style={{display:'inline-block'}}>
@@ -62,12 +62,12 @@ export const TopBar = observer((props: {}) => {
   );
 })
 
-const BottomBar = observer(() => {
-  const appChrome = useContext(AppChromeContext);
+const BottomBar = observer((props: { appChrome: AppChrome|undefined }) => {
+  //const appChrome = useContext(AppChromeContext);
   return (
     <BottomNavigation
       showLabels
-      value={appChrome?.currentSection}
+      value={props.appChrome?.currentSection}
     >
       <BottomNavigationAction component={RouterLink} to="/response" value='response' label="Response" icon={<DirectionsRunIcon />} />
       <BottomNavigationAction component={RouterLink} to="/events" value='events' label="Events" icon={<CampaignIcon />} />
@@ -78,6 +78,7 @@ const BottomBar = observer(() => {
 export const MainChrome = (props: {
   children?: React.ReactNode
 }) => {
+  const appChrome = useContext(AppChromeContext);
   return (<>
   <MobxRouteSync />
   <TopBar />
@@ -87,10 +88,7 @@ export const MainChrome = (props: {
       {props.children}
     </Box>
   </Container>
-  {/* <OTopBar store={props.store} />
-  <div style={{flex:'1 1 auto'}}>
-  </div> */}
-  <BottomBar />
+  {!(appChrome?.user?.isTrainee ?? true) && <BottomBar appChrome={appChrome} />}
 </>)
 };
 
