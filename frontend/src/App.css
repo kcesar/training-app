@@ -1,0 +1,33 @@
+html, body, #root {
+  display: flex;
+  flex: 1 1 auto;
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  align-items: stretch;
+  justify-content: stretch;
+  flex-direction: column;
+}
+
+.login-block {
+  display:flex;
+  flex-direction: column;
+  align-self: center;
+}
+
+.login-block h1 {
+  font-size: 1rem;
+  text-align: center;
+}
+
+.login-block::before {
+  content: '';
+  display: block;
+  flex: 1 1 auto;
+}
+
+.login-block::after {
+  content: '';
+  flex: 2 2 auto;
+}
