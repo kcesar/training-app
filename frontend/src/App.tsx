@@ -1,6 +1,6 @@
 import React from 'react';
 import { observer } from 'mobx-react';
-import { Route, Navigate, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import './App.css';
 import Store from './store';
 import GoogleLogin, { GoogleLoginResponse, GoogleLoginResponseOffline } from 'react-google-login';
@@ -36,8 +36,10 @@ const AppBody = observer(({store}: {store: Store}) => {
   return (
     <CustomRouter history={store.history}>
       <Routes>
-        <Route index element={<Navigate replace to="/me" />} />
-        <Route path="/me" element={<TraineePage store={store.getTraineeStore()} />} />
+        <Route element={<TraineePage store={store.getTraineeStore(true)} />}>
+          <Route index  element={<></>} />
+          <Route path=":courseId" element={<></>} />
+        </Route>
       </Routes>
     </CustomRouter>
   );

@@ -1,19 +1,12 @@
 import React from 'react';
 import { observer } from 'mobx-react';
-import { Link as RouterLink, useParams, useLocation } from "react-router-dom";
-import BottomNavigation from '@mui/material/BottomNavigation';
-import BottomNavigationAction from '@mui/material/BottomNavigationAction';
-import DirectionsRunIcon from '@mui/icons-material/DirectionsRun';
-import CampaignIcon from '@mui/icons-material/Campaign';
-import Store from '../store';
-import { runInAction } from 'mobx';
-import { AppBar, Box, Container, IconButton, Menu, MenuItem, Toolbar, Typography } from '@mui/material';
+import { AppBar, Box, IconButton, Menu, MenuItem, Toolbar, Typography } from '@mui/material';
 import { AccountCircle } from '@mui/icons-material';
 import { useContext } from 'react';
-import { AppChrome, AppChromeContext } from '../models/appChromeContext';
+import { AppChromeContext } from '../models/appChromeContext';
 import { MobxRouteSync } from './MobxRouteSync';
 
-export const TopBar = observer((props: {}) => {
+export const TopBar = observer(() => {
   const appChrome = useContext(AppChromeContext)!;
 
   const [menuAnchor, setMenuAnchor] = React.useState<HTMLElement|null>(null);
@@ -62,33 +55,17 @@ export const TopBar = observer((props: {}) => {
   );
 })
 
-const BottomBar = observer((props: { appChrome: AppChrome|undefined }) => {
-  //const appChrome = useContext(AppChromeContext);
-  return (
-    <BottomNavigation
-      showLabels
-      value={props.appChrome?.currentSection}
-    >
-      <BottomNavigationAction component={RouterLink} to="/response" value='response' label="Response" icon={<DirectionsRunIcon />} />
-      <BottomNavigationAction component={RouterLink} to="/events" value='events' label="Events" icon={<CampaignIcon />} />
-    </BottomNavigation>
-  )
-})
 
 export const MainChrome = (props: {
   children?: React.ReactNode
 }) => {
-  const appChrome = useContext(AppChromeContext);
   return (<>
   <MobxRouteSync />
   <TopBar />
   <Toolbar />
-  <Container maxWidth="md" style={{display: 'flex', flexDirection:'column', flex: '1 1 auto', overflowY: 'auto', position: 'relative'}}>
-    <Box sx={{ my: 2, display: 'flex', flexDirection:'column', flex: '1 1 auto' }}>
-      {props.children}
-    </Box>
-  </Container>
-  {!(appChrome?.user?.isTrainee ?? true) && <BottomBar appChrome={appChrome} />}
+  <Box style={{overflowY: 'auto', display:'flex', flexDirection: 'column', flex: '1 1 auto', position: 'relative'}}>
+    {props.children}
+  </Box>
 </>)
 };
 

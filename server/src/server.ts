@@ -15,6 +15,7 @@ import { sequelize } from './db/dbBuilder';
 import { existsSync, readFileSync } from 'fs';
 import { createLogger } from './logging';
 import { addAuthApi } from './api/authApi';
+import { addTrainingApi } from './api/trainingApi';
 
 configEnv({path: './.env.local'});
 
@@ -27,7 +28,6 @@ export interface AuthData extends TokenPayload {
 }
 export function userFromAuth(ticket?: AuthData) {
   if (!ticket) return undefined;
-console.log('userFromAuth isTrainee', ticket.isTrainee)
   return {
     name: ticket.name,
     email: ticket.email,
@@ -73,6 +73,7 @@ async function boot() {
   });
 
   addAuthApi(app, authClient, workspaceClient);
+  addTrainingApi(app, db);
 
   [
     '/favicon.ico',
