@@ -1,7 +1,7 @@
 import { Express } from 'express';
 import { OAuth2Client } from 'google-auth-library';
 import WorkspaceClient from '../googleWorkspace';
-import { userFromAuth } from '../server';
+import { userFromAuth } from '../index';
 
 export function addAuthApi(app: Express, authClient: OAuth2Client, workspaceClient: WorkspaceClient) {
   app.post("/api/auth/google", async (req, res) => {

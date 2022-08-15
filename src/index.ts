@@ -3,7 +3,7 @@ import session from 'express-session';
 import SequelizeStoreBuilder from 'connect-session-sequelize';
 
 import './types';
-import { config as configEnv } from 'dotenv';
+import './setup-env';
 import path from 'path';
 
 import WorkspaceClient from './googleWorkspace';
@@ -16,8 +16,6 @@ import { existsSync, readFileSync } from 'fs';
 import { createLogger } from './logging';
 import { addAuthApi } from './api/authApi';
 import { addTrainingApi } from './api/trainingApi';
-
-configEnv({path: './.env.local'});
 
 const SequelizeStore = SequelizeStoreBuilder(session.Store);
 const expressLog = createLogger('express');
@@ -43,7 +41,7 @@ async function boot() {
   const workspaceClient = await new WorkspaceClient().init();
 
   const app = express();
-  const port = 5021; // default port to listen
+  const port = process.env.PORT || 5021; // default port to listen
 
   app.use(express.json());
 
@@ -82,10 +80,10 @@ async function boot() {
     '/robots.txt',
     '/service-worker.js',
     '/static'
-  ].forEach(p => app.use(p, express.static(path.join(__dirname, `../../frontend/build${p}`))));
+  ].forEach(p => app.use(p, express.static(path.join(__dirname, `../../client${p}`))));
 
   app.get('*', (_req, res) => {
-    res.sendFile(path.resolve(__dirname, '../../frontend/build', 'index.html'));
+    res.sendFile(path.resolve(__dirname, '../../client', 'index.html'));
   });
 
   // start the Express server

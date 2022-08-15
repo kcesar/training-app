@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Divider, List, ListItem, ListItemAvatar, ListItemButton, ListItemText } from "@mui/material";
+import { Divider, List, ListItemAvatar, ListItemButton, ListItemText } from "@mui/material";
 import { observer } from "mobx-react";
 import { TaskProgress } from '../store/tasksStore';
 import BlockedIcon from '@mui/icons-material/Block';

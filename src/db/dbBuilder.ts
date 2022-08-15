@@ -20,7 +20,13 @@ function build() {
       process.env.DB_PASS,
       {
         ...commonOptions,
-        dialect: 'mssql'
+        host: process.env.DB_HOST,
+        dialect: 'mssql',
+        schema: 'training',
+        dialectOptions: {
+          encrypt: true,
+          database: process.env.DB_NAME,
+        }
       }
     );
   } else {

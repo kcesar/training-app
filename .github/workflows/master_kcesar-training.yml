@@ -21,17 +21,31 @@ jobs:
         with:
           node-version: '16.x'
 
-      - name: npm install, build, and test
+      # - name: npm install, build, and test
+      #   run: |
+      #     npm install
+      #     npm run build --if-present
+      #     npm run test --if-present
+      
+      - name: Build frontend
         run: |
           npm install
-          npm run build --if-present
-          npm run test --if-present
-      
+          npm run build
+        working-directory: frontend
+
+      - name: Build server
+        run: |
+          npm install
+          npm run build
+
+      - name: Zip package
+        run: tar.exe -a -c -f app.zip .
+
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v2
         with:
           name: node-app
-          path: .
+          path: app.zip
 
   deploy:
     runs-on: ubuntu-latest
@@ -53,4 +67,4 @@ jobs:
           app-name: 'kcesar-training'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_5820B0D334AA4584921873528B7D46F5 }}
-          package: .
+          package: app.zip

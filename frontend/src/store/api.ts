@@ -26,7 +26,9 @@ export async function apiPost<T>(url:string, data: any) :Promise<T> {
   return await response.json(); // parses JSON response into native JavaScript objects
 }
 
-export default {
+const group = {
   get: apiFetch,
   post: apiPost,
 }
+
+export default group;

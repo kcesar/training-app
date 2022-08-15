@@ -1,4 +1,4 @@
-import { AuthData } from "./server";
+import { AuthData } from "./index";
 
 declare module 'express-session' {
   export interface SessionData {
