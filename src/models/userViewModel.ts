@@ -1,4 +1,4 @@
-import { LoginResult } from '../../../api-models/loginModel';
+import { LoginResult } from '../api-models/loginModel';
 
 export type UserViewModel = LoginResult;
 export default UserViewModel;

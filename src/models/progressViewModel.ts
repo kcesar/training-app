@@ -1,5 +1,5 @@
 import { parseISO } from 'date-fns';
-import { ProgressModel } from '../../../api-models/ProgressModel';
+import { ProgressModel } from '../api-models/progressModel';
 
 export default interface ProgressViewModel extends Omit<ProgressModel, 'completed'> {
   completed: Date,

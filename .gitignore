@@ -24,6 +24,5 @@ yarn-error.log*
 
 /dist/
 /store.sqlite
-/local-*.json
 /google-credentials.json
-/client
+app.zip

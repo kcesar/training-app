@@ -6,8 +6,8 @@ import Store from './store';
 import GoogleLogin, { GoogleLoginResponse, GoogleLoginResponseOffline } from 'react-google-login';
 import { ThemeProvider } from '@mui/material';
 import TraineePage from './sections/TraineePage';
-import AdapterDateFns from '@mui/lab/AdapterDateFns';
-import LocalizationProvider from '@mui/lab/LocalizationProvider';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import CustomRouter from './components/CustomRouter';
 import { AppChromeContext } from './models/appChromeContext';
 

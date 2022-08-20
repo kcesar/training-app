@@ -1,6 +1,6 @@
 import { Express } from 'express';
 import DBRepo from '../db/dbRepo';
-import { ProgressModel} from '../../api-models/progressModel';
+import { ProgressModel} from '../../src/api-models/progressModel';
 
 export function addTrainingApi(app: Express, db: DBRepo) {
   app.get('/api/progress/:email', async (req, res) => {

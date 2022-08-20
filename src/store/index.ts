@@ -4,7 +4,7 @@ import { GoogleLoginResponse, GoogleLoginResponseOffline } from 'react-google-lo
 import { Location, Params } from 'react-router-dom';
 import { createBrowserHistory } from 'history';
 import Api from './api';
-import LoginModel, { LoginResult } from '../../../api-models/loginModel';
+import LoginModel, { LoginResult } from '../api-models/loginModel';
 import UserViewModel, { loginToViewModel } from '../models/userViewModel';
 import TraineeStore from './tasksStore';
 import { AppChrome } from '../models/appChromeContext';

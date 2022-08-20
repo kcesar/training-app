@@ -1,11 +1,12 @@
 import { Express } from 'express';
 import { OAuth2Client } from 'google-auth-library';
 import WorkspaceClient from '../googleWorkspace';
-import { userFromAuth } from '../index';
+import { userFromAuth } from '../server';
 
 export function addAuthApi(app: Express, authClient: OAuth2Client, workspaceClient: WorkspaceClient) {
   app.post("/api/auth/google", async (req, res) => {
     const { token } = req.body;
+    console.log('CLIENT_ID', token, process.env.CLIENT_ID)
     const ticket = await authClient.verifyIdToken({
       idToken: token,
       audience: process.env.CLIENT_ID

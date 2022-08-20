@@ -2,10 +2,10 @@ import * as React from 'react';
 import { observer } from 'mobx-react';
 
 import { TextField } from '@mui/material';
-import { DatePickerProps, MobileDatePicker } from '@mui/lab';
+import { DatePickerProps, MobileDatePicker } from '@mui/x-date-pickers';
 
 
-export const FormDatePicker = observer((props: {field: any} & Omit<DatePickerProps, 'value'|'onChange'|'renderInput'>) => {
+export const FormDatePicker = observer((props: {field: any} & Omit<DatePickerProps<any, any>, 'value'|'onChange'|'renderInput'>) => {
   const { field, ...extra } = props;
   const { value, onChange } = field.bind();
 
@@ -16,10 +16,10 @@ export const FormDatePicker = observer((props: {field: any} & Omit<DatePickerPro
     onChange={onChange}
     inputFormat="ccc M/d/yyyy"
     disableMaskedInput={false}
-    renderInput={(params) => {
+    renderInput={(params: any) => {
       return (<TextField sx={{ mr:'4px' }} {...params} />)
     }}
-    disableCloseOnSelect={false}
+    closeOnSelect={true}
     {...extra}
   />
   )

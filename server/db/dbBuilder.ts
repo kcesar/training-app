@@ -1,4 +1,5 @@
 import { Sequelize } from 'sequelize';
+import * as Tedious from 'tedious';
 import { createLogger } from '../logging';
 
 const log = createLogger('sequelize');
@@ -22,6 +23,7 @@ function build() {
         ...commonOptions,
         host: process.env.DB_HOST,
         dialect: 'mssql',
+        dialectModule: Tedious,
         schema: 'training',
         dialectOptions: {
           encrypt: true,

@@ -80,10 +80,10 @@ async function boot() {
     '/robots.txt',
     '/service-worker.js',
     '/static'
-  ].forEach(p => app.use(p, express.static(path.join(__dirname, `../../client${p}`))));
+  ].forEach(p => app.use(p, express.static(path.join(__dirname, `./client${p}`))));
 
   app.get('*', (_req, res) => {
-    res.sendFile(path.resolve(__dirname, '../../client', 'index.html'));
+    res.sendFile(path.resolve(__dirname, './client', 'index.html'));
   });
 
   // start the Express server

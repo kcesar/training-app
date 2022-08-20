@@ -24,12 +24,19 @@ class WorkspaceClient {
   cacheTime: number = 0;
 
   async init() {
-    const credsContent = await fs.readFile('google-credentials.json');
+    let credsFile = "google-credentials.json";
+    try {
+      await fs.access(credsFile)
+    } catch {
+      credsFile = `../${credsFile}`;
+    }
+    
+    const credsContent = await fs.readFile(credsFile);
     const creds = JSON.parse(credsContent.toString());
     console.log('creds', creds.toString());
     const jwtClient = new google.auth.JWT(
       creds.client_email,
-      null,
+      undefined,
       creds.private_key,
       [
         'https://www.googleapis.com/auth/admin.directory.user'
