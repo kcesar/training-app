@@ -35,10 +35,13 @@ function getSecondaryContent(progress: TaskProgress<SessionTask>, offering: Offe
 
   const slotsText = `${offering.signedUp ?? 0}/${offering.capacity} filled`; //+ (s.waiting ? `, ${s.waiting} waiting` : '')
 
-  const registerText = true ? 'Register' : 'Join Wait List';
-  const registerAction = 'register';
-  const actionEnabled = (registerAction === 'register' && progress.blockedBy.length == 0);
-  const registerButton = <Button size="small" color="primary" variant="outlined" disabled={!actionEnabled} onClick={() => register(offering, registerAction)}>{registerText}</Button>
+  let registerButton: JSX.Element|undefined = undefined;
+  if (!progress.completed) {
+    const registerText = true ? 'Register' : 'Join Wait List';
+    const registerAction = 'register';
+    const actionEnabled = (registerAction === 'register' && progress.blockedBy.length === 0);
+    registerButton =  (<Button size="small" color="primary" variant="outlined" disabled={!actionEnabled} onClick={() => register(offering, registerAction)}>{registerText}</Button>);
+  }
   return (<Box sx={{ display: 'flex', justifyContent:'space-between', alignItems: 'center'}}>
     <Box><Typography style={{opacity:0.6}}>{slotsText}</Typography></Box>
     <Box>{registerButton}</Box>
@@ -99,9 +102,9 @@ const TaskDetailContent = observer(({ store }: { store: TasksStore }) => {
   return (
     <>
       <Typography sx={{ mb: 2 }}>{progress.task.summary}</Typography>
-      {details}
       {progress.blockedBy.length > 0 && <BlockingList courses={progress.blockedBy.map(c => store.getCourseTitle(c) ?? '')} />}
       {progress.completed && <Alert sx={{ mt: 3, maxWidth: 'sm' }} variant="outlined" severity="success">You completed this {taskType} on {formatDate(progress.completed, 'PP')}</Alert>}
+      {details}
       <Dialog open={store.registerPrompt.open}
         onClose={() => store.confirmRegistration(false)}>
           <DialogTitle>{store.registerPrompt.title}</DialogTitle>
