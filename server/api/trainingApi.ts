@@ -1,5 +1,6 @@
 import { Express } from 'express';
 import DBRepo from '../db/dbRepo';
+import { OfferingModel} from '../../src/api-models/offeringModel';
 import { ProgressModel} from '../../src/api-models/progressModel';
 
 export function addTrainingApi(app: Express, db: DBRepo) {
@@ -25,4 +26,32 @@ export function addTrainingApi(app: Express, db: DBRepo) {
     }), progress);
     res.json(progress);
   });
+
+  app.get('/api/offerings', async (req, res) => {
+    try {
+      let offerings :{ [courseId: string]: OfferingModel[] } = {};
+      offerings = (await db.getOfferings()).reduce((accum, cur) => {
+        return ({
+        ...accum,
+        [cur.courseId]: [
+          ...accum[cur.courseId] ?? [],
+          {
+            id: cur.id,
+            courseId: cur.courseId,
+            capacity: cur.capacity,
+            location: cur.location,
+            startAt: cur.startAt,
+            doneAt: cur.doneAt,
+            signedUp: cur.signedUp,
+          }
+        ]
+      })
+    }, offerings);
+      res.json(offerings);
+    } catch (err) {
+      res.status(500).json({
+        message: err + ''
+      });
+    }
+  })
 }

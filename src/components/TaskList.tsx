@@ -5,8 +5,9 @@ import { TaskProgress } from '../store/tasksStore';
 import BlockedIcon from '@mui/icons-material/Block';
 import CheckIcon from '@mui/icons-material/Check';
 import { Link } from 'react-router-dom';
+import { TrainingTask } from '../store';
 
-const TaskList = ({tasks, selectedId} :{tasks: TaskProgress[], selectedId?: string}) => (
+const TaskList = ({tasks, selectedId} :{tasks: TaskProgress<TrainingTask>[], selectedId?: string}) => (
   <List sx={{ bgcolor: 'background.paper' }}>
     {tasks.map((progress, i) => (
       <React.Fragment key={progress.task.id}>
@@ -18,6 +19,7 @@ const TaskList = ({tasks, selectedId} :{tasks: TaskProgress[], selectedId?: stri
             undefined}
           </ListItemAvatar>
           <ListItemText
+            style={{ whiteSpace: 'nowrap' }}
             primary={progress.task.title}
           />
         </ListItemButton>

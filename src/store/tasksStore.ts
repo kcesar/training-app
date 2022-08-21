@@ -1,13 +1,17 @@
 import { action, computed, makeObservable, observable, onBecomeObserved, onBecomeUnobserved, reaction, runInAction } from 'mobx';
+import { format as formatDate } from 'date-fns';
 
 import Store, { TrainingTask } from '.';
-import ProgressViewModel from '../models/progressViewModel';
+import OfferingViewModel from '../models/offeringViewModel';
+import ProgressViewModel, { progressToViewModel } from '../models/progressViewModel';
 
-export interface TaskProgress {
-  task: TrainingTask,
+export interface TaskProgress<T extends TrainingTask> {
+  task: T,
   blockedBy: string[],
   completed?: Date
 }
+
+export type RegistrationAction = 'register'|'leave';
 
 class TasksStore {
   private store: Store;
@@ -17,6 +21,17 @@ class TasksStore {
   @observable private doLoadProgress: boolean = false;
 
   @observable traineeProgress?: { [courseId: string]: ProgressViewModel };
+
+  @observable registerPrompt :{
+    open: boolean,
+    action: RegistrationAction,
+    actionText?: string,
+    title?: string,
+    body?: string,
+  } = {
+    open: false,
+    action: 'register',
+  }
 
   constructor(store: Store, forSelf: boolean) {
     makeObservable(this);
@@ -43,6 +58,23 @@ class TasksStore {
     return Promise.resolve();
   }
 
+  @action.bound
+  async startRegistration(offering: OfferingViewModel, action: RegistrationAction) {
+    this.registerPrompt = {
+      open: true,
+      action,
+      actionText: 'Register',
+      title: 'Register',
+      body: `Register for ${this.selected?.task.title} on ${formatDate(offering.startAt, 'MMM do')}?`,
+    };
+  }
+
+  @action.bound
+  async confirmRegistration(confirm: boolean) {
+    if (confirm) alert('SHOULD DO SOMETHING');
+    this.registerPrompt = { ...this.registerPrompt, open: false }
+  }
+
   private loadProgress() {
     if (!this.doLoadProgress) return;
 
@@ -52,7 +84,7 @@ class TasksStore {
       .then(r => r.json())
       .then(j => {
         runInAction(() => {
-          this.traineeProgress = j;
+          this.traineeProgress = Object.keys(j).reduce((accum, key) => ({ ...accum, [key]: progressToViewModel(j[key])}), {} as {[courseId:string]: ProgressViewModel});
         });
       })
     }
@@ -69,9 +101,9 @@ class TasksStore {
   }
 
   @computed
-  get allTasks(): TaskProgress[] {
+  get allTasks(): TaskProgress<TrainingTask>[] {
     return this.store.allTasks.map(t => ({
-      task: t,
+      task: t.category === 'session' ? { ...t, offerings: this.store.offerings[t.id] ?? []} : t,
       blockedBy: (t.prereqs ?? []).filter(c => this.blockedByFilter(c)),
       completed: this.traineeProgress?.[t.id]?.completed,
     }));
@@ -82,7 +114,7 @@ class TasksStore {
   }
 
   @computed
-  get selected(): TaskProgress|undefined {
+  get selected(): TaskProgress<TrainingTask>|undefined {
     const courseId = this.store.route.params?.courseId;
     if (!courseId) return undefined;
 
@@ -96,6 +128,10 @@ class TasksStore {
       dest = dest.split('/').slice(0,-1).join('/');
     }
     return dest;
+  }
+
+  getCourseTitle(courseId: string) {
+    return this.allTasks.find(f => f.task.id === courseId)?.task.title;
   }
 }
 
