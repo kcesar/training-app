@@ -23,10 +23,10 @@
     "skipLibCheck": true,
   },
   "files": [
-    "src/backend/server.ts"
+    "server/server.ts"
   ],
   "include": [
-    "src/backend/**/*",
+    "server/**/*",
     "src/api-models/**/*"
   ],
   "exclude": ["node_modules"],

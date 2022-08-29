@@ -44,7 +44,6 @@ export default class DBRepo {
       where: { traineeEmail: email },
       include: [{ model: OfferingRow, as: 'offering' }],
      });
-    console.log('ROWS', rows);
     return rows as SignupWithOffering[];
   }
 }
