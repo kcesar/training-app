@@ -8,7 +8,9 @@ import ProgressViewModel, { progressToViewModel } from '../models/progressViewMo
 export interface TaskProgress<T extends TrainingTask> {
   task: T,
   blockedBy: string[],
-  completed?: Date
+  completed?: Date,
+  status: string,
+  registrations: {[offeringId:string]: 'registered'|'waiting' }
 }
 
 export type RegistrationAction = 'register'|'leave';
@@ -24,12 +26,16 @@ class TasksStore {
 
   @observable registerPrompt :{
     open: boolean,
+    offeringId: number,
     action: RegistrationAction,
     actionText?: string,
     title?: string,
     body?: string,
+    working?: boolean,
+    error?: string,
   } = {
     open: false,
+    offeringId: 0,
     action: 'register',
   }
 
@@ -52,6 +58,7 @@ class TasksStore {
     this._traineeName = name;
     if (this.traineeId !== email) {
       this._traineeId = email;
+      this.traineeProgress = {};
       this.loadProgress();
     }
 
@@ -62,31 +69,67 @@ class TasksStore {
   async startRegistration(offering: OfferingViewModel, action: RegistrationAction) {
     this.registerPrompt = {
       open: true,
+      offeringId: offering.id,
       action,
       actionText: 'Register',
       title: 'Register',
       body: `Register for ${this.selected?.task.title} on ${formatDate(offering.startAt, 'MMM do')}?`,
     };
+
+    if (action === 'leave') {
+      this.registerPrompt.actionText = 'Leave';
+      this.registerPrompt.title = 'Leave';
+      this.registerPrompt.body = `Give up your spot in ${this.selected?.task.title} on ${formatDate(offering.startAt, 'MMM do')}?`;
+    }
   }
 
   @action.bound
   async confirmRegistration(confirm: boolean) {
-    if (confirm) alert('SHOULD DO SOMETHING');
-    this.registerPrompt = { ...this.registerPrompt, open: false }
+    if (!confirm) {
+      this.registerPrompt = { ...this.registerPrompt, open: false };
+      return;
+    }
+
+    this.registerPrompt = { ...this.registerPrompt, error: undefined, working: true };
+
+    try {
+      const response = await fetch(`/api/offerings/${this.registerPrompt.offeringId}/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ traineeEmail: this.traineeId, action: this.registerPrompt.action })
+      });
+
+      if (!response.ok) {
+        throw (await response.json()).message ?? 'Unknown error';
+      }
+
+      runInAction(() => {
+        this.loadProgress().then(() => runInAction(() => {
+          this.store.loadOfferings().then(() => runInAction(() => {
+            this.registerPrompt = { ...this.registerPrompt, open: false };
+          }))
+        }));
+      });
+    } catch (err) {
+      runInAction(() => this.registerPrompt = { ...this.registerPrompt, error: err + '' });
+    } finally {
+      runInAction(() => this.registerPrompt = { ...this.registerPrompt, working: false });
+    }
   }
 
-  private loadProgress() {
+  private async loadProgress() {
     if (!this.doLoadProgress) return;
 
-    this.traineeProgress = {};
     if (this.traineeId) {
-      fetch(`/api/progress/${this.traineeId}`)
+      await (fetch(`/api/progress/${this.traineeId}`)
       .then(r => r.json())
       .then(j => {
         runInAction(() => {
           this.traineeProgress = Object.keys(j).reduce((accum, key) => ({ ...accum, [key]: progressToViewModel(j[key])}), {} as {[courseId:string]: ProgressViewModel});
         });
-      })
+      }));
     }
   }
 
@@ -106,6 +149,8 @@ class TasksStore {
       task: t.category === 'session' ? { ...t, offerings: this.store.offerings[t.id] ?? []} : t,
       blockedBy: (t.prereqs ?? []).filter(c => this.blockedByFilter(c)),
       completed: this.traineeProgress?.[t.id]?.completed,
+      registrations: this.traineeProgress?.[t.id]?.registrations ?? {},
+      status: this.traineeProgress?.[t.id]?.status ?? '',
     }));
   }
 

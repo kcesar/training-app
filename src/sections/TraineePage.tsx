@@ -33,14 +33,16 @@ const PaperworkTaskContent = ({ progress }: { progress: TaskProgress<PaperworkTa
 function getSecondaryContent(progress: TaskProgress<SessionTask>, offering: OfferingViewModel, register: RegisterHandler) {
   if (!isFuture(offering.startAt)) return undefined;
 
-  const slotsText = `${offering.signedUp ?? 0}/${offering.capacity} filled`; //+ (s.waiting ? `, ${s.waiting} waiting` : '')
+  const slotsText = `${offering.signedUp}/${offering.capacity} filled`; //+ (s.waiting ? `, ${s.waiting} waiting` : '')
 
   let registerButton: JSX.Element|undefined = undefined;
-  if (!progress.completed) {
+  if (progress.registrations[offering.id] === 'registered') {
+    registerButton = (<Button size="small" color="primary" variant="outlined" disabled={false} onClick={() => register(offering, 'leave')}>Leave</Button>);
+  } else if (!progress.completed && (offering.signedUp < offering.capacity) && Object.keys(progress.registrations).length == 0) {
     const registerText = true ? 'Register' : 'Join Wait List';
     const registerAction = 'register';
     const actionEnabled = (registerAction === 'register' && progress.blockedBy.length === 0);
-    registerButton =  (<Button size="small" color="primary" variant="outlined" disabled={!actionEnabled} onClick={() => register(offering, registerAction)}>{registerText}</Button>);
+    registerButton = (<Button size="small" color="primary" variant="outlined" disabled={!actionEnabled} onClick={() => register(offering, registerAction)}>{registerText}</Button>);
   }
   return (<Box sx={{ display: 'flex', justifyContent:'space-between', alignItems: 'center'}}>
     <Box><Typography style={{opacity:0.6}}>{slotsText}</Typography></Box>
@@ -108,7 +110,10 @@ const TaskDetailContent = observer(({ store }: { store: TasksStore }) => {
       <Dialog open={store.registerPrompt.open}
         onClose={() => store.confirmRegistration(false)}>
           <DialogTitle>{store.registerPrompt.title}</DialogTitle>
-          <DialogContent>{store.registerPrompt.body}</DialogContent>
+          <DialogContent>
+            {store.registerPrompt.error && <Alert severity="error">{store.registerPrompt.error}</Alert>}
+            {store.registerPrompt.body}
+          </DialogContent>
           <DialogActions>
             <Button onClick={() => store.confirmRegistration(false)}>Cancel</Button>
             <Button onClick={() => store.confirmRegistration(true)} variant="contained" color="primary">{store.registerPrompt.actionText}</Button>

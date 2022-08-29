@@ -71,7 +71,7 @@ async function boot() {
   });
 
   addAuthApi(app, authClient, workspaceClient);
-  addTrainingApi(app, db);
+  addTrainingApi(app, db, expressLog);
 
   [
     '/favicon.ico',

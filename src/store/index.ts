@@ -82,14 +82,7 @@ class Store implements AppChrome {
 
   constructor() {
     makeObservable(this);
-    onBecomeObserved(this, 'offerings', () => {
-      fetch('/api/offerings').then(r => r.json()).then(json => {
-        const j = json as {[courseId:string]: OfferingModel[]};
-        runInAction(() => {
-          this.offerings = Object.keys(j).reduce((accum, key) => ({ ...accum, [key]: j[key].map(offeringToViewModel)}), {} as {[courseId:string]: OfferingViewModel[]});
-        });
-      })
-    })
+    onBecomeObserved(this, 'offerings', () => this.loadOfferings());
   }
 
   async start() {
@@ -123,6 +116,15 @@ class Store implements AppChrome {
         }
       });
     }
+  }
+
+  async loadOfferings() {
+    await fetch('/api/offerings').then(r => r.json()).then(json => {
+      const j = json as {[courseId:string]: OfferingModel[]};
+      runInAction(() => {
+        this.offerings = Object.keys(j).reduce((accum, key) => ({ ...accum, [key]: j[key].map(offeringToViewModel)}), {} as {[courseId:string]: OfferingViewModel[]});
+      });
+    });
   }
 
   @action.bound

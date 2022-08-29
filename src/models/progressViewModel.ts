@@ -8,6 +8,7 @@ export default interface ProgressViewModel extends Omit<ProgressModel, 'complete
 export const progressToViewModel = (api: ProgressModel) => {
     return ({
     ...api,
-    completed: parseISO(api.completed),
+    completed: api.completed ? parseISO(api.completed) : undefined,
+    registrations: api.registrations ?? {},
   } as ProgressViewModel);
 }

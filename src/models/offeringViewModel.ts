@@ -11,5 +11,6 @@ export const offeringToViewModel = (api: OfferingModel) => {
     ...api,
     startAt: parseISO(api.startAt),
     doneAt: parseISO(api.doneAt),
+    signedUp: api.signedUp ?? 0
   } as OfferingViewModel);
 }

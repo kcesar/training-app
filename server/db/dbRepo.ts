@@ -4,6 +4,7 @@ import { OfferingRow } from './offeringRow';
 import { SignupRow } from './signupRow';
 
 type OfferingWithSignedUp = OfferingRow & { signedUp: number};
+type SignupWithOffering = SignupRow & { offering: OfferingRow };
 
 export default class DBRepo {
   async getCompleted(traineeEmail: string) {
@@ -31,5 +32,19 @@ export default class DBRepo {
     });
 
     return rows;
+  }
+
+  async getSignupsForOffering(id: string) {
+    const rows = await SignupRow.findAll({ where: { offeringId: id }});
+    return rows;
+  }
+
+  async getSignupsForTrainee(email: string) {
+    const rows = await SignupRow.findAll({
+      where: { traineeEmail: email },
+      include: [{ model: OfferingRow, as: 'offering' }],
+     });
+    console.log('ROWS', rows);
+    return rows as SignupWithOffering[];
   }
 }
