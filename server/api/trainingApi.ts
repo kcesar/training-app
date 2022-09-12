@@ -84,7 +84,6 @@ export function addTrainingApi(app: Express, db: DBRepo, log: Logger) {
 
   app.post('/api/offerings/:id/register', async (req, res) => {
     withErrors(res, async () => {
-      console.log(req.body);
       const body = req.body;
 
       if (!isAdminOrSelf(req, res, body.traineeEmail)) return;

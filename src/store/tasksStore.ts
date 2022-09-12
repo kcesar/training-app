@@ -17,8 +17,8 @@ export type RegistrationAction = 'register'|'leave';
 
 class TasksStore {
   private store: Store;
-  private _traineeId?: string;
-  private _traineeName?: string;
+  @observable private _traineeId?: string;
+  @observable private _traineeName?: string;
   private useSignedInUser: boolean = false;
   @observable private doLoadProgress: boolean = false;
 
@@ -53,7 +53,7 @@ class TasksStore {
   }
 
   @action.bound
-  async setTrainee(email?: string, name?: string) {
+  setTrainee(email?: string, name?: string) {
     this.useSignedInUser = false;
     this._traineeName = name;
     if (this.traineeId !== email) {
@@ -61,8 +61,6 @@ class TasksStore {
       this.traineeProgress = {};
       this.loadProgress();
     }
-
-    return Promise.resolve();
   }
 
   @action.bound
@@ -134,13 +132,23 @@ class TasksStore {
   }
 
   @computed
+  get coursesRoot() {
+    return this.useSignedInUser ? '/' : `/admin/trainees/${this.traineeId}/`;
+  }
+
+  @computed
+  get showHeader() {
+    return !this.useSignedInUser && !!this.traineeId;
+  }
+
+  @computed
   get traineeId() {
-    return this.useSignedInUser ? this.store.user?.email : this._traineeId;
+    return this.useSignedInUser ? (this.store.user?.email) : this._traineeId;
   }
 
   @computed
   get traineeName() {
-    return this.useSignedInUser ? this.store.user?.name : this._traineeName;
+    return this.useSignedInUser ? (this.store.user?.name) : this._traineeName;
   }
 
   @computed

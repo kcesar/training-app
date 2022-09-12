@@ -16,6 +16,7 @@ import { existsSync, readFileSync } from 'fs';
 import { createLogger } from './logging';
 import { addAuthApi } from './api/authApi';
 import { addTrainingApi } from './api/trainingApi';
+import { addAdminApi } from './api/adminApi';
 
 const SequelizeStore = SequelizeStoreBuilder(session.Store);
 const expressLog = createLogger('express');
@@ -72,7 +73,8 @@ async function boot() {
 
   addAuthApi(app, authClient, workspaceClient);
   addTrainingApi(app, db, expressLog);
-
+  addAdminApi(app, db, workspaceClient, expressLog);
+  
   [
     '/favicon.ico',
     '/logo192.png',

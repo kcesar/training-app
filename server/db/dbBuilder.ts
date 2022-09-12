@@ -28,7 +28,7 @@ function build() {
         dialectOptions: {
           encrypt: true,
           database: process.env.DB_NAME,
-        }
+        },
       }
     );
   } else {

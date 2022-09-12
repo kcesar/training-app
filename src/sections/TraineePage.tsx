@@ -166,20 +166,24 @@ const DetailsPage = observer(({ store }: { store: TasksStore }) => {
 
 export const LargeScreen = observer(({ store }: { store: TasksStore }) => {
   return (
-    <Box style={{ display: 'flex', flex: '1 1 auto', position: 'relative' }}>
-      <TaskList tasks={store.allTasks} selectedId={store.selected?.task.id} />
-      <Box style={{ flex: '1 1 auto', borderLeft: 'solid 1px black', padding: '1rem' }}>
-        <Typography variant="h5" component="div">{store.selected?.task.title ?? 'Review your training status'}</Typography>
-        <TaskDetailContent store={store} />
+    <>
+      {store.showHeader && <Box sx={{m:1}}><Link to="/admin/trainees">Trainees</Link> &gt; {store.traineeName}</Box>}
+      <Box style={{ display: 'flex', flex: '1 1 auto', position: 'relative' }}>
+        <TaskList tasks={store.allTasks} coursesRoot={store.coursesRoot} selectedId={store.selected?.task.id} />
+        <Box style={{ flex: '1 1 auto', borderLeft: 'solid 1px black', padding: '1rem' }}>
+          <Typography variant="h5" component="div">{store.selected?.task.title ?? 'Review your training status'}</Typography>
+          <TaskDetailContent store={store} />
+        </Box>
       </Box>
-    </Box>
+    </>
   )
 })
 
 export const SmallScreen = observer(({ store }: { store: TasksStore }) => {
   return (
     <Box>
-      <TaskList tasks={store.allTasks} />
+      {store.showHeader && <Typography>{store.traineeName}</Typography>}
+      <TaskList tasks={store.allTasks} coursesRoot={store.coursesRoot} />
       <DetailsPage store={store} />
     </Box>
   )

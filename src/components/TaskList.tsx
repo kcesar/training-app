@@ -7,12 +7,12 @@ import CheckIcon from '@mui/icons-material/Check';
 import { Link } from 'react-router-dom';
 import { TrainingTask } from '../store';
 
-const TaskList = ({tasks, selectedId} :{tasks: TaskProgress<TrainingTask>[], selectedId?: string}) => (
+const TaskList = ({tasks, coursesRoot, selectedId} :{tasks: TaskProgress<TrainingTask>[], coursesRoot: string, selectedId?: string}) => (
   <List sx={{ bgcolor: 'background.paper' }}>
     {tasks.map((progress, i) => (
       <React.Fragment key={progress.task.id}>
         {i > 0 && <Divider  component="li" />}
-        <ListItemButton component={Link} to={`/${progress.task.id}`} alignItems="center" selected={!!selectedId && progress.task.id === selectedId}>
+        <ListItemButton component={Link} to={`${coursesRoot}${progress.task.id}`} alignItems="center" selected={!!selectedId && progress.task.id === selectedId}>
           <ListItemAvatar>
             {progress.blockedBy.length > 0 ? <BlockedIcon color="disabled" /> :
             progress.completed ? <CheckIcon color="success" /> :

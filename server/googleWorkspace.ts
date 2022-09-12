@@ -1,16 +1,11 @@
 import * as fs from 'fs/promises';
 import { JWT } from 'google-auth-library';
 import { google } from 'googleapis';
+import UserModel from '../src/api-models/userModel';
 
-interface GoogleUser {
-  primaryEmail: string,
+interface GoogleUser extends UserModel {
   orgUnitPath: string,
   isMailboxSetup: boolean,
-  name: {
-    givenName: string,
-    familyName: string,
-    fullName: string,
-  },
 }
 
 class WorkspaceClient {
@@ -46,6 +41,10 @@ class WorkspaceClient {
     this.cacheUsers = await this.loadUsers(jwtClient);
 
     return this;
+  }
+
+  getTrainees() :UserModel[] {
+    return this.cacheUsers.trainees;
   }
 
   getUserFromEmail(email: string) {

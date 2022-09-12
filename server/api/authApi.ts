@@ -13,10 +13,19 @@ export function addAuthApi(app: Express, authClient: OAuth2Client, workspaceClie
     });
 
     const payload = ticket.getPayload();
-    if (process.env.ALLOWED_DOMAINS.split(',').indexOf(payload.hd) < 0) {
+    if (!payload) {
+      res.status(500).json({message: 'Could not get ticket'});
+      return;
+    }
+    if (!payload.email) {
+      res.status(500).json({message: 'Could not get user email'});
+      return;
+    }
+
+    if ((process.env.ALLOWED_DOMAINS?.split(',')?.indexOf(payload.hd ?? '') ?? 0) < 0) {
       console.log(`${payload.email} from domain ${payload.hd} not allowed`)
       res.status(403).json({error: 'User not from allowed Google domain' })
-      return
+      return;
     }
 
     const member = await workspaceClient.getUserFromEmail(payload.email);
