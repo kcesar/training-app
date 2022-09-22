@@ -7,6 +7,7 @@ type OfferingWithSignedUp = OfferingRow & { signedUp: number};
 type SignupWithOffering = SignupRow & { offering: OfferingRow };
 
 export default class DBRepo {
+
   async getCompleted(traineeEmail: string) {
     const rows = await CompletionRow.findAll({ where: { traineeEmail }});
     return rows;
@@ -45,5 +46,13 @@ export default class DBRepo {
       include: [{ model: OfferingRow, as: 'offering' }],
      });
     return rows as SignupWithOffering[];
+  }
+
+  async getSignupsForCourse(courseId: string) {
+    const rows = await SignupRow.findAll({
+      where: { '$offering.courseId$': courseId },
+      include: [{ model: OfferingRow, as: 'offering' }],
+    })
+    return rows;
   }
 }

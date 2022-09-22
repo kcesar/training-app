@@ -9,7 +9,6 @@ export const TraineePageWrapper = (props: {
 }) => {
   const params = useParams<{email:string}>();
   const traineeStore = props.store.getTraineeStore(params);
-console.log('params', params);
   return (
     <>
     {<div>{JSON.stringify(params)}</div>}

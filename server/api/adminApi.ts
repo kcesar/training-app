@@ -2,6 +2,7 @@ import { Express, Request, Response } from 'express';
 import DBRepo from '../db/dbRepo';
 import { OfferingModel} from '../../src/api-models/offeringModel';
 import { ProgressModel} from '../../src/api-models/progressModel';
+import { SignupModel } from '../../src/api-models/signupModel';
 import { SignupRow } from '../db/signupRow';
 import { Logger } from 'winston';
 import WorkspaceClient from '../googleWorkspace';
@@ -34,4 +35,18 @@ export function addAdminApi(app: Express, db: DBRepo, workspaceClient: Workspace
     const rows = workspaceClient.getTrainees();
     res.json(rows);
   });
+
+  app.get('/api/admin/courses/:courseId/signups', async (req, res) => {
+    if (!isAdmin(req, res)) return;
+
+    const dbRows = await db.getSignupsForCourse(req.params.courseId);
+    const rows :SignupModel[] = dbRows.map(r => ({
+      id: r.id + '',
+      offeringId: r.offeringId + '',
+      traineeEmail: r.traineeEmail,
+      traineeName: workspaceClient.getUserFromEmail(r.traineeEmail)?.name.fullName
+    }));
+
+    res.json(rows);
+  })
 }

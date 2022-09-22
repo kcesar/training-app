@@ -1,4 +1,4 @@
-import { Container, List, ListItemButton, ListItemText, Typography, useMediaQuery, useTheme } from "@mui/material";
+import { Container, List, ListItemButton, ListItemText, Typography } from "@mui/material";
 import { observer } from "mobx-react";
 import { Link } from "react-router-dom";
 import MainChrome from "../../components/MainChrome";
