@@ -1,4 +1,4 @@
-import { Box, Container, List, ListItem, ListItemText } from "@mui/material";
+import { Box, Button, Container, List, ListItem, ListItemText } from "@mui/material";
 import { observer } from "mobx-react";
 import { Link, useParams } from "react-router-dom";
 import { format as formatDate } from 'date-fns';
@@ -16,18 +16,21 @@ export const RosterPage = (props: {
 
   const offering = course?.offerings?.find(o => (o.id + '') === params.offeringId)
   if (!offering) return (<MainChrome>Loading...</MainChrome>);
+  const roster = course.signups.filter(s => s.offeringId === offering.id + '') ?? [];
 
   return (
     <MainChrome>
       <Container>
         <Box sx={{m:1}}><Link to="/admin">Admin</Link> &gt; <Link to={`/admin/courses/${course.id}`}>{course.title}</Link> &gt; {formatDate(offering.startAt, 'MMM do')}</Box>
         <List sx={{ bgcolor: 'background.paper' }}>
-          {(course.signups ?? []).map(s => (
+          {roster.map(s => (
             <ListItem key={s.id}>
               <ListItemText primary={s.traineeName} />
             </ListItem>
           ))}
         </List>
+
+        <Button variant="outlined" onClick={() => courseStore.generateCSV(roster)}>Spreadsheet</Button>
       </Container>
     </MainChrome>
   );

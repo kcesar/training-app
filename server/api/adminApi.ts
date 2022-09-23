@@ -40,12 +40,16 @@ export function addAdminApi(app: Express, db: DBRepo, workspaceClient: Workspace
     if (!isAdmin(req, res)) return;
 
     const dbRows = await db.getSignupsForCourse(req.params.courseId);
-    const rows :SignupModel[] = dbRows.map(r => ({
-      id: r.id + '',
-      offeringId: r.offeringId + '',
-      traineeEmail: r.traineeEmail,
-      traineeName: workspaceClient.getUserFromEmail(r.traineeEmail)?.name.fullName
-    }));
+    const rows :SignupModel[] = dbRows.map(r => {
+      const t = workspaceClient.getUserFromEmail(r.traineeEmail);
+      return {
+        id: r.id + '',
+        offeringId: r.offeringId + '',
+        traineeEmail: r.traineeEmail,
+        traineeName: t.name.fullName,
+        traineePhone: t.phones?.find(f => f.type === 'mobile')?.value,
+      };
+    }).sort((a,b) => a.traineeName.localeCompare(b.traineeName));
 
     res.json(rows);
   })

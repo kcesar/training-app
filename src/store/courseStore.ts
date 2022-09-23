@@ -38,6 +38,27 @@ class CourseStore {
     })
   }
 
+  @action.bound
+  generateCSV(roster: SignupViewModel[]) {
+    let rows = roster.map((s) => [
+      s.traineeName,
+      s.traineeEmail,
+      s.traineePhone
+    ].map(t => t ? `"${t}"` : ''));
+    rows.unshift(['Name','Email','Phone']);
+
+    const csvContent = rows.join("\n");
+    const blob = new Blob([csvContent], {
+      type: 'text/csv;charset=utf-8;'
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `roster-${this.course?.id}.csv`);
+    link.click()
+    URL.revokeObjectURL(link.href)
+  }
+
   @computed
   get course() {
     const c = this.store.courseList.find(f => f.id === this.courseId);

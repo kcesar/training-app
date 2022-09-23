@@ -3,4 +3,5 @@ export interface SignupModel {
   offeringId: string,
   traineeEmail: string,
   traineeName: string,
+  traineePhone?: string,
 }

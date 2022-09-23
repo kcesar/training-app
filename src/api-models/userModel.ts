@@ -5,4 +5,5 @@ export default interface UserModel {
     familyName: string,
     fullName: string,
   },
+  phones?: { value: string, type: string }[],
 }
