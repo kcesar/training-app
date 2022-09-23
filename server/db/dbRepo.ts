@@ -16,7 +16,9 @@ export default class DBRepo {
   async getOfferings() {
     // Sequelize doesn't make this obvious... hacky hacky
 
-    let rows = JSON.parse(JSON.stringify(await OfferingRow.findAll())) as OfferingWithSignedUp[];
+    let rows = JSON.parse(JSON.stringify(await OfferingRow.findAll({
+      order: [ 'startAt' ],
+    }))) as OfferingWithSignedUp[];
     const lookup :{[id:string]: OfferingWithSignedUp } = {};
     rows.forEach(r => lookup[r.id] = r);
 
