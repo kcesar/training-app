@@ -1,4 +1,4 @@
-import { Container, List, ListItemButton, ListItemText, Typography } from "@mui/material";
+import { Box, Container, List, ListItemButton, ListItemText, Typography } from "@mui/material";
 import { observer } from "mobx-react";
 import { Link } from "react-router-dom";
 import MainChrome from "../../components/MainChrome";
@@ -12,7 +12,7 @@ export const TraineeListPage = (props: {
   return (
     <MainChrome>
       <Container>
-        <Typography>Basic Trainees</Typography>
+      <Box sx={{m:1}}><Link to="/admin">Admin</Link> &gt; Basic Trainees</Box>
         <List sx={{ bgcolor: 'background.paper' }}>
           {store.trainees.map(t => (
             <ListItemButton key={t.primaryEmail} component={Link} to={t.primaryEmail} alignItems="center">

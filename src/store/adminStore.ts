@@ -49,6 +49,11 @@ class AdminStore {
     }
     return this.courseStore!;
   }
+
+  @computed
+  get adminName() {
+    return this.store.user?.name;
+  }
 }
 
 export default AdminStore;

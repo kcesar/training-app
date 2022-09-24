@@ -36,6 +36,14 @@ export function addAdminApi(app: Express, db: DBRepo, workspaceClient: Workspace
     res.json(rows);
   });
 
+  app.get('/api/admin/reloadUsers', async (req, res) => {
+    if (!isAdmin(req, res)) return;
+
+    workspaceClient.forceReload();
+    res.json({ message: "OK" });
+  });
+
+
   app.get('/api/admin/courses/:courseId/signups', async (req, res) => {
     if (!isAdmin(req, res)) return;
 

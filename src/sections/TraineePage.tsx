@@ -4,14 +4,14 @@ import CloseIcon from "@mui/icons-material/Close";
 import { TransitionProps } from "@mui/material/transitions";
 import { observer } from "mobx-react";
 import { Link, useNavigate } from "react-router-dom";
-import { format as formatDate, isSameMonth, isSameDay, isFuture } from 'date-fns';
+import { format as formatDate, isFuture } from 'date-fns';
 import MainChrome from "../components/MainChrome";
 import TaskList from "../components/TaskList";
 import TasksStore, { RegistrationAction, TaskProgress } from "../store/tasksStore";
 import TraineeStore from "../store/tasksStore";
 
 import { OnlineTask, PaperworkTask, SessionTask } from '../store';
-import OfferingViewModel from '../models/offeringViewModel';
+import OfferingViewModel, { formatOfferingDates } from '../models/offeringViewModel';
 
 type RegisterHandler = (offering: OfferingViewModel, action: RegistrationAction) => Promise<void>;
 
@@ -55,8 +55,7 @@ const SessionTaskContent = ({ progress, register }: { progress: TaskProgress<Ses
     <>
       <List sx={{ maxWidth: '25em' }}>
         {progress.task.offerings.map(o => {
-          const dates = isSameDay(o.startAt, o.doneAt) ? formatDate(o.startAt, 'MMM do h:mma') :
-          formatDate(o.startAt, 'MMM d') + ' - ' + formatDate(o.doneAt, isSameMonth(o.startAt, o.doneAt) ? 'd' : 'MMM do');
+          const dates = formatOfferingDates(o);
           const primaryContent = (<Box sx={{ display: 'flex', justifyContent:'space-between'}}><Typography><strong>{dates}</strong></Typography><Typography>{o.location}</Typography></Box>);
           return (
             <ListItem key={o.id} divider>
