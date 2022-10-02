@@ -9,7 +9,7 @@ import { SessionTask, TrainingTask } from '.';
 import AdminStore from './adminStore';
 import SignupViewModel, { signupToViewModel } from '../models/signupViewModel';
 
-(<any>pdfMake).vfs = pdfFonts.pdfMake.vfs;
+(pdfMake as any).vfs = pdfFonts.pdfMake.vfs;
 const ROWS_PER_PDF_PAGE = 13;
 
 export interface TaskProgress<T extends TrainingTask> {
@@ -28,6 +28,13 @@ class CourseStore {
   @observable loadingSignups: boolean = false;
   @observable signups: SignupViewModel[] = [];
 
+  @observable loadingCompleted: boolean = false;
+  @observable completed: string[] = [];
+  @observable completedOfferingId: string = '';
+  @observable editingCompleted: boolean = false;
+  @observable pendingCompleted: string[] = [];
+  @observable savingCompleted: boolean = false;
+
   constructor(store: AdminStore, courseId: string) {
     makeObservable(this);
     this.store = store;
@@ -44,6 +51,62 @@ class CourseStore {
       this.signups = result.map(signupToViewModel);
       this.loadingSignups = false;
     })
+  }
+
+  @action.bound
+  async loadCompleted(offeringId: string) {
+    if (this.loadingCompleted || this.completedOfferingId === offeringId) return;
+    this.loadingCompleted = true;
+
+    const response = await fetch(`/api/admin/offerings/${offeringId}/completed`);
+    const result = await response.json();
+    runInAction(() => {
+      this.completed = result.map((f: any) => f.traineeEmail);
+      this.loadingCompleted = false;
+    });
+  }
+
+  @action.bound
+  editCompleted(offeringId: string): void {
+    this.editingCompleted = true;
+    this.pendingCompleted = [ ...(this.completed.length ? this.completed : this.getRoster(offeringId).map(r => r.traineeEmail)) ];
+  }
+
+  @action.bound
+  setCompleted(traineeEmail: string, checked: boolean) {
+    this.pendingCompleted = this.pendingCompleted.filter(f => f !== traineeEmail);
+    if (checked) this.pendingCompleted.push(traineeEmail);
+  }
+
+  @action.bound
+  async finishCompleted(offeringId?: string) {
+    try {
+      if (offeringId) {
+        this.savingCompleted = true;
+        try {
+          const response = await fetch(`/api/admin/offerings/${offeringId}/completed`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ list: this.pendingCompleted })
+          });
+          if (!response.ok) throw new Error("Failed to save");
+          
+          this.completed = [ ...this.pendingCompleted ];
+        } finally {
+          this.savingCompleted = false;
+        }
+      }
+      this.editingCompleted = false;
+    } catch (error) {
+      alert('Error: ' + error);
+    }
+  }
+
+  @computed
+  get computedWorking() {
+    return this.loadingCompleted || this.savingCompleted;
   }
 
   @action.bound
@@ -173,6 +236,10 @@ class CourseStore {
       offerings: this.store.offerings[this.courseId],
       signups: this.signups
     };
+  }
+
+  getRoster(offeringId: string) {
+    return this.course?.signups?.filter(s => s.offeringId === offeringId) ?? [];
   }
 }
 

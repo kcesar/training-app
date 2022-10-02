@@ -13,6 +13,13 @@ export default class DBRepo {
     return rows;
   }
 
+  async getCompletedForOffering(offeringId: string) {
+    const offering = await OfferingRow.findOne({ where: { id: offeringId }});
+    if (!offering) return [];
+    const rows = await CompletionRow.findAll({ where: { courseId: offering.courseId, completed: offering.doneAt }});
+    return rows;
+  }
+
   async getOfferings() {
     // Sequelize doesn't make this obvious... hacky hacky
 

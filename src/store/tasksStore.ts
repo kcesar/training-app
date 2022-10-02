@@ -26,7 +26,7 @@ class TasksStore {
 
   @observable registerPrompt :{
     open: boolean,
-    offeringId: number,
+    offeringId: string,
     action: RegistrationAction,
     actionText?: string,
     title?: string,
@@ -35,7 +35,7 @@ class TasksStore {
     error?: string,
   } = {
     open: false,
-    offeringId: 0,
+    offeringId: '',
     action: 'register',
   }
 

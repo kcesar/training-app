@@ -1,5 +1,5 @@
 export interface OfferingModel {
-  id: number,
+  id: string,
   courseId: string,
   location: string,
   capacity: number,

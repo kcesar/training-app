@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Response } from 'express';
 import session from 'express-session';
 import SequelizeStoreBuilder from 'connect-session-sequelize';
 
@@ -17,6 +17,7 @@ import { createLogger } from './logging';
 import { addAuthApi } from './api/authApi';
 import { addTrainingApi } from './api/trainingApi';
 import { addAdminApi } from './api/adminApi';
+import { Logger } from 'winston';
 
 const SequelizeStore = SequelizeStoreBuilder(session.Store);
 const expressLog = createLogger('express');
@@ -33,6 +34,15 @@ export function userFromAuth(ticket?: AuthData) {
     domain: ticket.hd,
     isTrainees: ticket.isTrainee,
     picture: ticket.picture,
+  }
+}
+
+export async function withErrors(res: Response, log:Logger, action: () => Promise<void>) {
+  try {
+    await action();
+  } catch (err) {
+    log.error(err);
+    res.status(500).json({ message: err });
   }
 }
 
@@ -60,15 +70,17 @@ async function boot() {
   const db = new DBRepo();
 
   app.get('/api/boot', async (req, res) => {
-    if (!req.session?.auth && existsSync('local-auth.json')) {
-      expressLog.info('using debug login credentials in local-auth.json');
-      req.session.auth = JSON.parse(readFileSync('local-auth.json', 'utf8'));
-    }
+    withErrors(res, expressLog, async () => {
+      if (!req.session?.auth && existsSync('local-auth.json')) {
+        expressLog.info('using debug login credentials in local-auth.json');
+        req.session.auth = JSON.parse(readFileSync('local-auth.json', 'utf8'));
+      }
 
-    res.json({
-      user: userFromAuth(req.session.auth),
-      config: { clientId: process.env.AUTH_CLIENT }
-    })
+      res.json({
+        user: userFromAuth(req.session.auth),
+        config: { clientId: process.env.AUTH_CLIENT }
+      })
+    });
   });
 
   addAuthApi(app, authClient, workspaceClient);

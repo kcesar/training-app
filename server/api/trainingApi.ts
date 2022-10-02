@@ -4,17 +4,9 @@ import { OfferingModel} from '../../src/api-models/offeringModel';
 import { ProgressModel} from '../../src/api-models/progressModel';
 import { SignupRow } from '../db/signupRow';
 import { Logger } from 'winston';
+import { withErrors } from '../server';
 
 export function addTrainingApi(app: Express, db: DBRepo, log: Logger) {
-  async function withErrors(res: Response, action: () => Promise<void>) {
-    try {
-      await action();
-    } catch (err) {
-      log.error(err);
-      res.status(500).json({ message: err });
-    }
-  }
-
   function isAdminOrSelf(req: Request, res: Response, email: string) {
     if (!req.session.auth) {
       res.status(401).json({ error: 'authentication required' });
@@ -59,7 +51,7 @@ export function addTrainingApi(app: Express, db: DBRepo, log: Logger) {
   });
 
   app.get('/api/offerings', async (req, res) => {
-    withErrors(res, async () => {
+    withErrors(res, log, async () => {
       let offerings :{ [courseId: string]: OfferingModel[] } = {};
       offerings = (await db.getOfferings()).reduce((accum, cur) => {
         return ({
@@ -67,7 +59,7 @@ export function addTrainingApi(app: Express, db: DBRepo, log: Logger) {
         [cur.courseId]: [
           ...accum[cur.courseId] ?? [],
           {
-            id: cur.id,
+            id: cur.id + '',
             courseId: cur.courseId,
             capacity: cur.capacity,
             location: cur.location,
@@ -83,7 +75,7 @@ export function addTrainingApi(app: Express, db: DBRepo, log: Logger) {
   });
 
   app.post('/api/offerings/:id/register', async (req, res) => {
-    withErrors(res, async () => {
+    withErrors(res, log, async () => {
       const body = req.body;
 
       if (!isAdminOrSelf(req, res, body.traineeEmail)) return;

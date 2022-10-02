@@ -15,6 +15,10 @@ function build() {
       throw new Error('DB environment not set (DB_NAME, DB_USER, DB_PASS)');
     }
     console.log(`Using MSSQL ${process.env.DB_HOST}`);
+    //@ts-ignore
+    Sequelize.DATE.prototype._stringify = function _stringify(date, options) {
+      return this._applyTimezone(date, options).format('YYYY-MM-DDTHH:mm:ss');
+    };
     sequelize = new Sequelize(
       process.env.DB_NAME,
       process.env.DB_USER,
