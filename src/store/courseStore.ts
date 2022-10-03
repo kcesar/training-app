@@ -3,7 +3,7 @@ import * as pdfMake from "pdfmake/build/pdfmake";
 import * as pdfFonts from 'pdfmake/build/vfs_fonts';
 import { Content } from 'pdfmake/interfaces';
 import OfferingViewModel, { formatOfferingDates } from '../models/offeringViewModel';
-import { format as formatDate } from 'date-fns';
+import { format as formatDate, isPast } from 'date-fns';
 
 import { SessionTask, TrainingTask } from '.';
 import AdminStore from './adminStore';
@@ -34,6 +34,11 @@ class CourseStore {
   @observable editingCompleted: boolean = false;
   @observable pendingCompleted: string[] = [];
   @observable savingCompleted: boolean = false;
+
+  @observable snackText?: string;
+  @observable snackOpen: boolean = false;
+  @observable snackSeverity?: 'success'|'error'|'warning'|'info';
+  @observable snackTime = 4000;
 
   constructor(store: AdminStore, courseId: string) {
     makeObservable(this);
@@ -107,6 +112,41 @@ class CourseStore {
   @computed
   get computedWorking() {
     return this.loadingCompleted || this.savingCompleted;
+  }
+
+  @computed
+  get copyEmailsText() {
+    return this.completed.length ? 'Copy Completed Emails' : 'Copy Emails';
+  }
+
+  @action.bound
+  async emailsToClipboard(roster: SignupViewModel[]) {
+    if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+      const action = async (emails: string[], message: string) => {
+        await navigator.clipboard.writeText(emails.join('; '));
+        this.showSnackBar(message, 'success');
+      }
+
+      if (this.completed.length) {
+        action(this.completed, 'Emails of trainees that completed this course were copied to the clipboard');
+      } else {
+        action(roster.map(f => f.traineeEmail), 'Emails of all registered trainees were copied to the clipboard');
+      }
+    } else {
+      this.showSnackBar('Cannot copy data to clipboard', 'error');
+    }
+  }
+
+  @action.bound
+  showSnackBar(message: string, severity?: 'error'|'warning'|'info'|'success') {
+    this.snackText = message;
+    this.snackSeverity = severity;
+    this.snackOpen = true;
+  }
+
+  @action.bound
+  clearSnackText() {
+    this.snackOpen = false;
   }
 
   @action.bound

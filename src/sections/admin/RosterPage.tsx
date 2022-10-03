@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Box, Button, Checkbox, Container, List, ListItem, ListItemIcon, ListItemText, Stack } from "@mui/material";
+import { Alert, Box, Button, Checkbox, Container, List, ListItem, ListItemIcon, ListItemText, Snackbar, Stack } from "@mui/material";
 import { observer } from "mobx-react";
 import { Link, useParams } from "react-router-dom";
 import { format as formatDate, isPast } from 'date-fns';
@@ -13,9 +13,9 @@ const UpdateButton = (props: {
   inProgress: boolean,
   action: () => void,
 }) => (
-  props.visible ? <Button disabled={props.inProgress} variant="outlined" size="small" onClick={() => props.action()}>{
+  <Button disabled={!props.visible || props.inProgress} variant="outlined" size="small" onClick={() => props.action()}>{
     props.working ? 'Working ...' : 'Update Completed'
-  }</Button> : null
+  }</Button>
 )
 
 export const RosterPage = (props: {
@@ -44,6 +44,7 @@ export const RosterPage = (props: {
           <Button variant="outlined" size="small" onClick={() => courseStore.generateCSV(roster)}>Spreadsheet</Button>
           <Button variant="outlined" size="small" onClick={() => courseStore.generatePDF(roster, course, offering)}>PDF Roster</Button>
           <UpdateButton visible={isPast(offering.startAt)} working={courseStore.loadingCompleted} inProgress={courseStore.editingCompleted} action={() => courseStore.editCompleted(offering.id)} />
+          <Button variant="outlined" size="small" disabled={courseStore.computedWorking} onClick={() => courseStore.emailsToClipboard(roster)}>{courseStore.copyEmailsText}</Button>
         </Stack>
         { courseStore.editingCompleted && <Stack spacing={2} direction="row">
           <Button variant="outlined" size="small" disabled={courseStore.computedWorking} onClick={() => courseStore.finishCompleted(offering.id + '')}>Save</Button>
@@ -69,8 +70,15 @@ export const RosterPage = (props: {
             </ListItem>
           ))}
         </List>
-
-
+        <Snackbar
+          open={courseStore.snackOpen}
+          autoHideDuration={courseStore.snackTime}
+          onClose={courseStore.clearSnackText}
+          message={courseStore.snackText}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+          >
+          <Alert onClose={courseStore.clearSnackText} severity={courseStore.snackSeverity} sx={{ width: '100%' }}>{courseStore.snackText}</Alert>
+        </Snackbar>
       </Container>
     </MainChrome>
   );

@@ -74,13 +74,14 @@ export function addAdminApi(app: Express, db: DBRepo, workspaceClient: Workspace
     withErrors(res, log, async () => {
       const offering = (await db.getOfferings()).find(f => f.id + '' === req.params.offeringId);
       const dbExisting = await db.getCompletedForOffering(req.params.offeringId);
+
       const incomingList = (req.body as { list: string[] })?.list;
 
       for (let i=0; i<dbExisting.length; i++) {
         const incomingIdx = incomingList.indexOf(dbExisting[i].traineeEmail);
         if (incomingIdx >= 0) {
           log.info(`Found existing row for ${dbExisting[i].traineeEmail}`);
-          incomingList.slice(incomingIdx, 1);
+          incomingList.splice(incomingIdx, 1);
         } else {
           log.info(`Removing completed entry for ${dbExisting[i].traineeEmail}`);
           await dbExisting[i].destroy();
