@@ -3,7 +3,7 @@ import * as pdfMake from "pdfmake/build/pdfmake";
 import * as pdfFonts from 'pdfmake/build/vfs_fonts';
 import { Content } from 'pdfmake/interfaces';
 import OfferingViewModel, { formatOfferingDates } from '../models/offeringViewModel';
-import { format as formatDate, isPast } from 'date-fns';
+import { format as formatDate } from 'date-fns';
 
 import { SessionTask, TrainingTask } from '.';
 import AdminStore from './adminStore';

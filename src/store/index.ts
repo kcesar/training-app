@@ -1,6 +1,5 @@
 import { createTheme } from '@mui/material';
 import { action, computed, makeObservable, observable, onBecomeObserved, runInAction } from 'mobx';
-import { GoogleLoginResponse, GoogleLoginResponseOffline } from 'react-google-login';
 import { Location, Params } from 'react-router-dom';
 import { createBrowserHistory } from 'history';
 import Api from './api';
@@ -10,6 +9,7 @@ import TraineeStore from './tasksStore';
 import { AppChrome } from '../models/appChromeContext';
 import OfferingViewModel, { offeringToViewModel } from '../models/offeringViewModel';
 import { OfferingModel } from '../api-models/offeringModel';
+import { CredentialResponse } from '@react-oauth/google';
 
 interface SiteConfig {
   clientId: string
@@ -95,15 +95,11 @@ class Store implements AppChrome {
   }
 
   @action.bound
-  async doLogin(data:GoogleLoginResponse|GoogleLoginResponseOffline) {
-    this.loginError = undefined;
-
-    if (!!data.code) {
-      alert(`login error code:${data.code}`)
+  async doLogin(data?: CredentialResponse) {
+    if (!data || !data.credential) {
+      alert('login error');
     } else {
-      const loginData = data as GoogleLoginResponse;
-
-      const res = await Api.post<LoginModel>("/api/auth/google", { token: loginData.tokenId });
+      const res = await Api.post<LoginModel>('/api/auth/google', { token: data.credential });
 
       runInAction(() => {
         if (res.error) {

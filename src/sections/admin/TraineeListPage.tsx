@@ -1,4 +1,4 @@
-import { Box, Container, List, ListItemButton, ListItemText, Typography } from "@mui/material";
+import { Box, Container, List, ListItemButton, ListItemText } from "@mui/material";
 import { observer } from "mobx-react";
 import { Link } from "react-router-dom";
 import MainChrome from "../../components/MainChrome";
