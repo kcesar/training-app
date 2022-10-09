@@ -32,7 +32,7 @@ export function userFromAuth(ticket?: AuthData) {
     name: ticket.name,
     email: ticket.email,
     domain: ticket.hd,
-    isTrainees: ticket.isTrainee,
+    isTrainee: ticket.isTrainee,
     picture: ticket.picture,
   }
 }
