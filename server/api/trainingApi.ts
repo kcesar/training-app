@@ -77,6 +77,7 @@ export function addTrainingApi(app: Express, db: DBRepo, log: Logger) {
   app.post('/api/offerings/:id/register', async (req, res) => {
     withErrors(res, log, async () => {
       const body = req.body;
+      const isAdmin: boolean = !!req.session.auth && !req.session.auth.isTrainee;
 
       if (!isAdminOrSelf(req, res, body.traineeEmail)) return;
 
@@ -93,7 +94,7 @@ export function addTrainingApi(app: Express, db: DBRepo, log: Logger) {
           res.status(400).json({message:'Already registered for this course'});
           return;
         }
-        if (existing.length > offering.capacity) {
+        if (existing.length > offering.capacity && !isAdmin) {
           res.status(400).json({message:'Course is full'});
           return;
         }
