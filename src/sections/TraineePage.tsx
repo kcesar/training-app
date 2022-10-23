@@ -30,7 +30,7 @@ const PaperworkTaskContent = ({ progress }: { progress: TaskProgress<PaperworkTa
   )
 }
 
-function getSecondaryContent(progress: TaskProgress<SessionTask>, offering: OfferingViewModel, register: RegisterHandler) {
+function getSecondaryContent(progress: TaskProgress<SessionTask>, offering: OfferingViewModel, isAdmin: boolean, register: RegisterHandler) {
   if (!isFuture(offering.startAt)) return undefined;
 
   const slotsText = `${offering.signedUp}/${offering.capacity} filled`; //+ (s.waiting ? `, ${s.waiting} waiting` : '')
@@ -38,10 +38,10 @@ function getSecondaryContent(progress: TaskProgress<SessionTask>, offering: Offe
   let registerButton: JSX.Element|undefined = undefined;
   if (progress.registrations[offering.id] === 'registered') {
     registerButton = (<Button size="small" color="primary" variant="outlined" disabled={false} onClick={() => register(offering, 'leave')}>Leave</Button>);
-  } else if (!progress.completed && (offering.signedUp < offering.capacity) && Object.keys(progress.registrations).length === 0) {
+  } else if (!progress.completed && ((offering.signedUp < offering.capacity) || isAdmin) && Object.keys(progress.registrations).length === 0) {
     const registerText = true ? 'Register' : 'Join Wait List';
     const registerAction = 'register';
-    const actionEnabled = (registerAction === 'register' && progress.blockedBy.length === 0);
+    const actionEnabled = isAdmin || (registerAction === 'register' && progress.blockedBy.length === 0);
     registerButton = (<Button size="small" color="primary" variant="outlined" disabled={!actionEnabled} onClick={() => register(offering, registerAction)}>{registerText}</Button>);
   }
   return (<Box sx={{ display: 'flex', justifyContent:'space-between', alignItems: 'center'}}>
@@ -50,7 +50,7 @@ function getSecondaryContent(progress: TaskProgress<SessionTask>, offering: Offe
   </Box>)
 }
 
-const SessionTaskContent = ({ progress, register }: { progress: TaskProgress<SessionTask>, register: RegisterHandler}) => {
+const SessionTaskContent = ({ progress, isAdmin, register }: { progress: TaskProgress<SessionTask>, isAdmin: boolean, register: RegisterHandler}) => {
   return (
     <>
       <List sx={{ maxWidth: '25em' }}>
@@ -59,7 +59,7 @@ const SessionTaskContent = ({ progress, register }: { progress: TaskProgress<Ses
           const primaryContent = (<Box sx={{ display: 'flex', justifyContent:'space-between'}}><Typography><strong>{dates}</strong></Typography><Typography>{o.location}</Typography></Box>);
           return (
             <ListItem key={o.id} divider>
-              <ListItemText primary={<>{primaryContent}{getSecondaryContent(progress, o, register)}</>} />
+              <ListItemText primary={<>{primaryContent}{getSecondaryContent(progress, o, isAdmin, register)}</>} />
             </ListItem>
           );
           })}
@@ -94,7 +94,7 @@ const TaskDetailContent = observer(({ store }: { store: TasksStore }) => {
       taskType = "task";
       break;
     case 'session':
-      details = <SessionTaskContent progress={progress as TaskProgress<SessionTask>} register={store.startRegistration} />;
+      details = <SessionTaskContent progress={progress as TaskProgress<SessionTask>} register={store.startRegistration} isAdmin={store.userIsAdmin} />;
       break;
     default:
       details = <div>Unknown</div>

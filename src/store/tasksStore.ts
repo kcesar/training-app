@@ -186,6 +186,11 @@ class TasksStore {
   getCourseTitle(courseId: string) {
     return this.allTasks.find(f => f.task.id === courseId)?.task.title;
   }
+
+  @computed
+  get userIsAdmin(): boolean {
+    return !!this.store.user && !this.store.user.isTrainee;
+  }
 }
 
 export default TasksStore;
