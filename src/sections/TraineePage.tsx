@@ -36,9 +36,11 @@ function getSecondaryContent(progress: TaskProgress<SessionTask>, offering: Offe
   const slotsText = `${offering.signedUp}/${offering.capacity} filled`; //+ (s.waiting ? `, ${s.waiting} waiting` : '')
 
   let registerButton: JSX.Element|undefined = undefined;
-  if (progress.registrations[offering.id] === 'registered') {
+  const futureRegistrationCount = Object.values(progress.registrations).filter(f => !f.isPast).length;
+
+  if (progress.registrations[offering.id]?.status === 'registered') {
     registerButton = (<Button size="small" color="primary" variant="outlined" disabled={false} onClick={() => register(offering, 'leave')}>Leave</Button>);
-  } else if (!progress.completed && ((offering.signedUp < offering.capacity) || isAdmin) && Object.keys(progress.registrations).length === 0) {
+  } else if (!progress.completed && ((offering.signedUp < offering.capacity) || isAdmin) && futureRegistrationCount === 0) {
     const registerText = true ? 'Register' : 'Join Wait List';
     const registerAction = 'register';
     const actionEnabled = isAdmin || (registerAction === 'register' && progress.blockedBy.length === 0);

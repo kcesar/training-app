@@ -1,4 +1,5 @@
 import { Express, Request, Response } from 'express';
+import { isPast } from 'date-fns';
 import DBRepo from '../db/dbRepo';
 import { OfferingModel} from '../../src/api-models/offeringModel';
 import { ProgressModel} from '../../src/api-models/progressModel';
@@ -33,7 +34,7 @@ export function addTrainingApi(app: Express, db: DBRepo, log: Logger) {
         status: (accum[cur.offering.courseId]?.status === 'registered' || !cur.onWaitList) ? 'registered' : 'waiting',
         registrations: {
           ...accum[cur.offeringId]?.registrations ?? {},
-          [cur.offeringId]: 'registered'
+          [cur.offeringId]: { status: 'registered', isPast: isPast(new Date(cur.offering.startAt))}
         },
       }
     }), progress);

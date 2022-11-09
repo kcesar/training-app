@@ -17,7 +17,10 @@ export interface TaskProgress<T extends TrainingTask> {
   blockedBy: string[],
   completed?: Date,
   status: string,
-  registrations: {[offeringId:string]: 'registered'|'waiting' }
+  registrations: {[offeringId:string]: {
+    status: 'registered'|'waiting',
+    isPast?: boolean,
+  }},
 }
 
 export type RegistrationAction = 'register'|'leave';
