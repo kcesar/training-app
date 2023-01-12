@@ -77,7 +77,7 @@ class Store implements AppChrome {
     { id: 'course-2', title: 'Course II', summary: "Outdoor weekend - Evaluation", category: 'session', prereqs: ['course-1'], hours: 31, offerings: [] },
     { id: 'fa-searcher', title: 'Searcher First Aid', summary: 'SAR specific first aid and scenarios', category: 'session', hours: 9, prereqs: ['course-2', 'fa-intro'], offerings: []},
     { id: 'course-3', title: 'Course III', summary: "Outdoor weekend - mock mission", category: 'session', prereqs: ['fa-searcher', 'ics-100', 'ics-700'], hours: 31, offerings: [] },
-    { id: 'graduation', title: 'ESAR Ops Orientation', summary: 'Information for new graduates about responding to missions, etc.', category: 'session', prereqs: ['course-3'], hours: 3, offerings: [] }
+    { id: 'orientation', title: 'ESAR Ops Orientation', summary: 'Information for new graduates about responding to missions, etc.', category: 'session', prereqs: ['course-3'], hours: 3, offerings: [] }
   ];
 
   constructor() {
