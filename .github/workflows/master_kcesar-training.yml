@@ -6,7 +6,7 @@ name: Build and deploy Node.js app to Azure Web App - kcesar-training
 on:
   push:
     branches:
-      - master
+      - master-old
   workflow_dispatch:
 
 jobs:
