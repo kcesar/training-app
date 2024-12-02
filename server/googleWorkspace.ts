@@ -78,15 +78,21 @@ class WorkspaceClient {
   }
 
   private async getJwtClient() {
-    let credsFile = "google-credentials.json";
-    try {
-      await fs.access(credsFile)
-    } catch {
-      credsFile = `../${credsFile}`;
+    let creds: any;
+    if (process.env.GOOGLE_CREDENTIALS) {
+      console.log('Reading creds from the environment');
+      creds = JSON.parse(process.env.GOOGLE_CREDENTIALS);
+    } else {
+      let credsFile = "google-credentials.json";
+      try {
+        await fs.access(credsFile)
+      } catch {
+        credsFile = `../${credsFile}`;
+      }
+
+      const credsContent = await fs.readFile(credsFile);
+      creds = JSON.parse(credsContent.toString());
     }
-    
-    const credsContent = await fs.readFile(credsFile);
-    const creds = JSON.parse(credsContent.toString());
     const jwtClient = new google.auth.JWT(
       creds.client_email,
       undefined,
