@@ -95,7 +95,7 @@ export function addTrainingApi(app: Express, db: DBRepo, log: Logger) {
           res.status(400).json({message:'Already registered for this course'});
           return;
         }
-        if (existing.length > offering.capacity && !isAdmin) {
+        if (existing.length >= offering.capacity && !isAdmin) {
           res.status(400).json({message:'Course is full'});
           return;
         }

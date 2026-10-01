@@ -1,16 +1,29 @@
 import { Express } from 'express';
-import { OAuth2Client } from 'google-auth-library';
+import { LoginTicket, OAuth2Client } from 'google-auth-library';
 import WorkspaceClient from '../googleWorkspace';
 import { userFromAuth } from '../server';
 
 export function addAuthApi(app: Express, authClient: OAuth2Client, workspaceClient: WorkspaceClient) {
   app.post("/api/auth/google", async (req, res) => {
     const { token } = req.body;
-    console.log('CLIENT_ID', token, process.env.CLIENT_ID)
-    const ticket = await authClient.verifyIdToken({
-      idToken: token,
-      audience: process.env.CLIENT_ID
-    });
+    if (!process.env.AUTH_CLIENT) {
+      res.status(500).json({ error: 'AUTH_CLIENT is not configured' });
+      return;
+    }
+
+    let ticket: LoginTicket;
+    try {
+      ticket = await authClient.verifyIdToken({
+        idToken: token,
+        audience: process.env.AUTH_CLIENT
+      });
+    } catch (err) {
+      // Some verification errors include the token itself, so keep it out of the logs.
+      const reason = (err as Error).message.split(token || undefined).join('<token>');
+      console.log(`Rejected Google token: ${reason}`);
+      res.status(401).json({ error: 'Invalid Google login' });
+      return;
+    }
 
     const payload = ticket.getPayload();
     if (!payload) {
