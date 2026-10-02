@@ -43,11 +43,23 @@ class CourseStore {
   @observable snackSeverity?: 'success'|'error'|'warning'|'info';
   @observable snackTime = 4000;
 
+  // Number of trainees marked complete, by offering. Offerings with completions can't be edited.
+  @observable offeringCompletions: { [offeringId: string]: number } = {};
+
   constructor(store: AdminStore, courseId: string) {
     makeObservable(this);
     this.store = store;
     this.courseId = courseId;
     onBecomeObserved(this, 'signups', () => runInAction(() => this.loadSignups()));
+    onBecomeObserved(this, 'offeringCompletions', () => this.loadOfferingCompletions());
+  }
+
+  @action.bound
+  async loadOfferingCompletions() {
+    const response = await fetch(`/api/admin/courses/${this.courseId}/completions`);
+    if (!response.ok) return;
+    const result = await response.json();
+    runInAction(() => this.offeringCompletions = result);
   }
 
   @action.bound
@@ -63,15 +75,27 @@ class CourseStore {
 
   @action.bound
   async loadCompleted(offeringId: string) {
-    if (this.loadingCompleted || this.completedOfferingId === offeringId) return;
+    if (this.completedOfferingId !== offeringId) {
+      // Don't show another offering's completions while this one loads.
+      this.completedOfferingId = offeringId;
+      this.completed = [];
+      this.editingCompleted = false;
+    }
     this.loadingCompleted = true;
 
-    const response = await fetch(`/api/admin/offerings/${offeringId}/completed`);
-    const result = await response.json();
-    runInAction(() => {
-      this.completed = result.map((f: any) => f.traineeEmail);
-      this.loadingCompleted = false;
-    });
+    try {
+      const response = await fetch(`/api/admin/offerings/${offeringId}/completed`);
+      if (!response.ok) throw new Error(`Failed to load completions for offering ${offeringId}`);
+      const result = await response.json();
+      runInAction(() => {
+        // Ignore the response if the user has since moved to another offering.
+        if (this.completedOfferingId === offeringId) this.completed = result.map((f: any) => f.traineeEmail);
+      });
+    } finally {
+      runInAction(() => {
+        if (this.completedOfferingId === offeringId) this.loadingCompleted = false;
+      });
+    }
   }
 
   @action.bound

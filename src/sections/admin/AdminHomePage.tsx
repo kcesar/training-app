@@ -3,6 +3,7 @@ import { observer } from "mobx-react";
 import { Link } from "react-router-dom";
 import MainChrome from "../../components/MainChrome";
 import AdminStore from "../../store/adminStore";
+import { formatOfferingDatesShort } from "../../models/offeringViewModel";
 
 export const AdminHomePage = (props: {
   store: AdminStore
@@ -17,7 +18,9 @@ export const AdminHomePage = (props: {
       <List sx={{ bgcolor: 'background.paper' }} subheader={<ListSubheader component="div">Courses</ListSubheader>}>
         {props.store.courseList.map(c => (
           <ListItemButton key={c.id} component={Link} to={`courses/${c.id}`}>
-            <ListItemText primary={c.title} />
+            <ListItemText
+              primary={c.title}
+              secondary={(props.store.offerings[c.id] ?? []).map(formatOfferingDatesShort).join(', ')} />
           </ListItemButton>
         ))}
       </List>

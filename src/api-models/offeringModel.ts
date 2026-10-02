@@ -7,3 +7,5 @@ export interface OfferingModel {
   doneAt: string,
   signedUp: number,
 }
+
+export type OfferingUpdateModel = Pick<OfferingModel, 'startAt'|'doneAt'|'capacity'>;

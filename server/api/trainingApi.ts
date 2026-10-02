@@ -6,6 +6,7 @@ import { ProgressModel} from '../../src/api-models/progressModel';
 import { SignupRow } from '../db/signupRow';
 import { Logger } from 'winston';
 import { withErrors } from '../server';
+import { utcDate } from '../db/dates';
 
 export function addTrainingApi(app: Express, db: DBRepo, log: Logger) {
   function isAdminOrSelf(req: Request, res: Response, email: string) {
@@ -34,7 +35,7 @@ export function addTrainingApi(app: Express, db: DBRepo, log: Logger) {
         status: (accum[cur.offering.courseId]?.status === 'registered' || !cur.onWaitList) ? 'registered' : 'waiting',
         registrations: {
           ...accum[cur.offeringId]?.registrations ?? {},
-          [cur.offeringId]: { status: 'registered', isPast: isPast(new Date(cur.offering.startAt))}
+          [cur.offeringId]: { status: 'registered', isPast: isPast(utcDate(cur.offering.startAt))}
         },
       }
     }), progress);
@@ -44,11 +45,17 @@ export function addTrainingApi(app: Express, db: DBRepo, log: Logger) {
       [cur.courseId]: {
         ...accum[cur.courseId],
         status: 'complete',
-        completed: cur.completed
+        completed: utcDate(cur.completed).toISOString()
       }
     }), progress);
 
     res.json(progress);
+  });
+
+  app.get('/api/courses', async (req, res) => {
+    withErrors(res, log, async () => {
+      res.json(await db.getCourses());
+    });
   });
 
   app.get('/api/offerings', async (req, res) => {
@@ -64,8 +71,8 @@ export function addTrainingApi(app: Express, db: DBRepo, log: Logger) {
             courseId: cur.courseId,
             capacity: cur.capacity,
             location: cur.location,
-            startAt: cur.startAt,
-            doneAt: cur.doneAt,
+            startAt: utcDate(cur.startAt).toISOString(),
+            doneAt: utcDate(cur.doneAt).toISOString(),
             signedUp: cur.signedUp,
           }
         ]

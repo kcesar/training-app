@@ -1,11 +1,12 @@
 import * as React from "react";
-import { Alert, Box, Button, Checkbox, Container, List, ListItem, ListItemIcon, ListItemText, Snackbar, Stack } from "@mui/material";
+import { Alert, Box, Button, Checkbox, Container, List, ListItem, ListItemIcon, ListItemText, Snackbar, Stack, Typography } from "@mui/material";
 import { observer } from "mobx-react";
 import { Link, useParams } from "react-router-dom";
 import { format as formatDate, isPast } from 'date-fns';
 import CheckIcon from '@mui/icons-material/Check';
 import MainChrome from "../../components/MainChrome";
 import AdminStore from "../../store/adminStore";
+import { formatOfferingDateTimes, formatRegistrationStatus } from "../../models/offeringViewModel";
 
 const UpdateButton = (props: {
   visible: boolean,
@@ -40,6 +41,12 @@ export const RosterPage = (props: {
     <MainChrome>
       <Container>
         <Box sx={{m:1}}><Link to="/admin">Admin</Link> &gt; <Link to={`/admin/courses/${course.id}`}>{course.title}</Link> &gt; {formatDate(offering.startAt, 'MMM do')}</Box>
+        <Box sx={{mx:1, my:2}}>
+          <Typography variant="h6" component="div">{formatOfferingDateTimes(offering)}</Typography>
+          <Typography variant="body2" color={roster.length > offering.capacity ? 'warning.main' : 'text.secondary'}>
+            {formatRegistrationStatus(roster.length, offering.capacity)}
+          </Typography>
+        </Box>
         <Stack spacing={2} direction="row">
           <Button variant="outlined" size="small" onClick={() => courseStore.generateCSV(roster)}>Spreadsheet</Button>
           <Button variant="outlined" size="small" onClick={() => courseStore.generatePDF(roster, course, offering)}>PDF Roster</Button>

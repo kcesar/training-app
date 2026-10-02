@@ -9,6 +9,7 @@ import TraineeStore from './tasksStore';
 import { AppChrome } from '../models/appChromeContext';
 import OfferingViewModel, { offeringToViewModel } from '../models/offeringViewModel';
 import { OfferingModel } from '../api-models/offeringModel';
+import { CourseModel } from '../api-models/courseModel';
 import { CredentialResponse } from '@react-oauth/google';
 
 interface SiteConfig {
@@ -25,6 +26,8 @@ interface BaseTask {
 export interface SessionTask extends BaseTask {
   category: 'session',
   hours: number,
+  startTime?: string,
+  endTime?: string,
   offerings: OfferingViewModel[],
 }
 
@@ -59,26 +62,7 @@ class Store implements AppChrome {
   @observable config: SiteConfig = { clientId: '' };
   @observable offerings: { [courseId:string]: OfferingViewModel[] } = {};
 
-  @observable allTasks :TrainingTask[] = [
-    // { title: 'Contact Information', summary: 'Address, Email, Phone Number', category: 'personal' },
-    // { title: 'Emergency Contacts', summary: 'Who to call in an emergency', category: 'personal' },
-    // { id: 'fa-card', title: 'First Aid', summary: 'American Heart (AHA), Red Cross (ARC) or equivalent First Aid card', category: 'paperwork', details: 'Submit a scan or picture of a current first aid card to training.admin@kcesar.org' },
-    // { id: 'cpr-card', title: 'CPR', summary: 'American Heart (AHA), Red Cross (ARC) or equivalent CPR card', category: 'paperwork', details: 'Submit a scan or picture of a current CPR card to training.admin@kcesar.org' },
-    // { id: 'ics-100', title: 'ICS-100', summary: 'FEMA required online course', category: 'online', details: 'ICS 100, Introduction to the Incident Command System, introduces the Incident Command System (ICS) and provides the foundation for higher level ICS training. This course describes the history, features and principles, and organizational structure of the Incident Command System. It also explains the relationship between ICS and the National Incident Management System (NIMS).', url:'https://training.fema.gov/is/courseoverview.aspx?code=IS-100.c' },
-    // { id: 'ics-700', title: 'ICS-700', summary: 'FEMA required online course', category: 'online', details: 'This course introduces and overviews the National Incident Management System (NIMS). NIMS provides a consistent nationwide template to enable all government, private-sector, and nongovernmental organizations to work together during domestic incidents.', url:'https://training.fema.gov/is/courseoverview.aspx?code=IS-700.b', },
-    //{ title: 'Course A', summary: 'Evening orientation', category: 'session', details: 'This is an in-town weeknight informational meeting used to present ESAR objectives, organization and procedures.\n\nDiscussions center on basic training course content, requirements for team member field qualification, and personal equipment needs.', hours: 2},
-    { id: 'course-b', title: 'Course B', summary: 'Indoor navigation course', category: 'session', hours: 9, offerings: [] },
-    { id: 'fa-intro', title: 'Intro to Searcher First Aid', summary: '', category: 'session', hours: 9, prereqs: ['course-b'], offerings: []},
-    { id: 'course-c', title: 'Course C', summary: "Outdoor weekend - Intro to SAR", category: 'session', hours: 32.5, prereqs: ['fa-intro'], offerings: [] },
-    //{ title: 'Background Check', summary: "Sheriff's Office application", category: 'paperwork', details: 'All potential KCESAR members submit an application to the King County Sheriff\'s office, who will conduct a criminal background check on the applicant.\n\nThis status will be updated when we are informed that you have passed this check. KCESAR does not receive the result of the background check except a pass/fail from the sheriff\'s office.' },
-    //{ title: 'LFL Registration', summary: "For youth members", category: 'paperwork' },
-//      { title: 'Submit Photo', summary: "Submit portrait for ID card", category: 'paperwork' },
-    { id: 'course-1', title: 'Course I', summary: "Outdoor weekend - Navigation", category: 'session', prereqs: ['course-c'], hours: 31, offerings: [] },
-    { id: 'fa-searcher', title: 'Searcher First Aid', summary: 'SAR specific first aid and scenarios', category: 'session', hours: 9, prereqs: ['course-c'], offerings: []},
-    { id: 'course-2', title: 'Course II', summary: "Outdoor weekend - Evaluation", category: 'session', prereqs: ['course-1', 'fa-searcher'], hours: 31, offerings: [] },
-    { id: 'course-3', title: 'Course III', summary: "Outdoor weekend - mock mission", category: 'session', prereqs: ['course-2'], hours: 31, offerings: [] },
-    { id: 'orientation', title: 'ESAR Ops Orientation', summary: 'Information for new graduates about responding to missions, etc.', category: 'session', prereqs: ['course-2'], hours: 3, offerings: [] }
-  ];
+  @observable allTasks :TrainingTask[] = [];
 
   constructor() {
     makeObservable(this);
@@ -86,8 +70,12 @@ class Store implements AppChrome {
   }
 
   async start() {
-    const response = await Api.get<{config: SiteConfig, user: LoginResult}>('/api/boot');
+    const [response, courses] = await Promise.all([
+      Api.get<{config: SiteConfig, user: LoginResult}>('/api/boot'),
+      Api.get<CourseModel[]>('/api/courses'),
+    ]);
     runInAction(() => {
+      this.setCourses(courses);
       this.config = response.config as SiteConfig;
       this.user = loginToViewModel(response.user);
       this.started = true;
@@ -112,6 +100,11 @@ class Store implements AppChrome {
         }
       });
     }
+  }
+
+  @action.bound
+  setCourses(courses: CourseModel[]) {
+    this.allTasks = courses.map(c => ({ ...c, category: 'session', offerings: [] }));
   }
 
   async loadOfferings() {

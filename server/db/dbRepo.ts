@@ -1,12 +1,27 @@
 import { Sequelize } from 'sequelize';
+import { CourseModel } from '../../src/api-models/courseModel';
+import { defaultCourses } from '../defaultCourses';
 import { CompletionRow } from './completionRow';
 import { OfferingRow } from './offeringRow';
+import { SettingRow } from './settingRow';
 import { SignupRow } from './signupRow';
+import { utcDate } from './dates';
 
 type OfferingWithSignedUp = OfferingRow & { signedUp: number};
 type SignupWithOffering = SignupRow & { offering: OfferingRow };
 
+const COURSES_SETTING = 'courses';
+
 export default class DBRepo {
+
+  async getCourses(): Promise<CourseModel[]> {
+    const row = await SettingRow.findByPk(COURSES_SETTING);
+    return row ? JSON.parse(row.value) : defaultCourses;
+  }
+
+  async saveCourses(courses: CourseModel[]) {
+    await SettingRow.upsert({ id: COURSES_SETTING, value: JSON.stringify(courses) });
+  }
 
   async getCompleted(traineeEmail: string) {
     const rows = await CompletionRow.findAll({ where: { traineeEmail }});
@@ -16,8 +31,20 @@ export default class DBRepo {
   async getCompletedForOffering(offeringId: string) {
     const offering = await OfferingRow.findOne({ where: { id: offeringId }});
     if (!offering) return [];
-    const rows = await CompletionRow.findAll({ where: { courseId: offering.courseId, completed: offering.doneAt }});
+    const rows = await CompletionRow.findAll({ where: { courseId: offering.courseId, completed: utcDate(offering.doneAt) }});
     return rows;
+  }
+
+  // Completions are matched to an offering by course and end date, like getCompletedForOffering.
+  async getCompletionCountsForCourse(courseId: string) {
+    const offerings = await OfferingRow.findAll({ where: { courseId }});
+    const completions = await CompletionRow.findAll({ where: { courseId }});
+    const counts: { [offeringId: string]: number } = {};
+    for (const o of offerings) {
+      const doneAt = utcDate(o.doneAt).getTime();
+      counts[o.id + ''] = completions.filter(c => utcDate(c.completed).getTime() === doneAt).length;
+    }
+    return counts;
   }
 
   async getOfferings() {
