@@ -11,6 +11,7 @@ import { OfferingRow } from '../db/offeringRow';
 import { SignupRow } from '../db/signupRow';
 import { sequelize } from '../db/dbBuilder';
 import { utcDate } from '../db/dates';
+import { NEW_SEASON_CONFIRMATION, SeasonSummaryModel } from '../../src/api-models/seasonModel';
 
 export function addAdminApi(app: Express, db: DBRepo, workspaceClient: WorkspaceClient, log: Logger) {
   function isAdmin(req: Request, res: Response) {
@@ -176,30 +177,21 @@ export function addAdminApi(app: Express, db: DBRepo, workspaceClient: Workspace
         res.status(404).json({ message: `Offering ${req.params.offeringId} not found` });
         return;
       }
-      // Completions are removed with the offering, so trainees lose credit for it here.
-      // The admin has to confirm the roster is already recorded in D4H first.
-      const completed = await db.getCompletedForOffering(req.params.offeringId);
-      if (completed.length > 0 && req.query.d4hConfirmed !== 'true') {
-        res.status(409).json({ message: 'Confirm the roster has been entered into D4H before removing an offering with completed trainees' });
+      // Completions are what count towards later courses' prerequisites, so a session that has them
+      // is kept until the season is reset.
+      if ((await db.getCompletedForOffering(req.params.offeringId)).length > 0) {
+        res.status(409).json({ message: "Can't remove a session after trainees have been marked complete" });
         return;
       }
 
-      // Remove related rows explicitly rather than relying on a cascade in the database schema.
+      // Remove registrations explicitly rather than relying on a cascade in the database schema.
       const dropped = await sequelize.transaction(async transaction => {
         const signups = await SignupRow.findAll({ where: { offeringId: offering.id }, transaction });
         await SignupRow.destroy({ where: { offeringId: offering.id }, transaction });
-        if (completed.length > 0) {
-          await CompletionRow.destroy({ where: { id: completed.map(c => c.id) }, transaction });
-        }
         await offering.destroy({ transaction });
         return signups.map(s => s.traineeEmail);
       });
-      log.info(`${req.session.auth!.email} removed offering ${offering.id} for ${offering.courseId}`, {
-        startAt: offering.startAt,
-        dropped,
-        completionsRemoved: completed.map(c => c.traineeEmail),
-        d4hConfirmed: completed.length > 0,
-      });
+      log.info(`${req.session.auth!.email} removed offering ${offering.id} for ${offering.courseId}`, { startAt: offering.startAt, dropped });
       res.json({ message: 'OK' });
     });
   });
@@ -208,6 +200,37 @@ export function addAdminApi(app: Express, db: DBRepo, workspaceClient: Workspace
     if (!isAdmin(req, res)) return;
     withErrors(res, log, async () => {
       res.json(await db.getCompletionCountsForCourse(req.params.courseId));
+    });
+  });
+
+  app.get('/api/admin/season', async (req, res) => {
+    if (!isAdmin(req, res)) return;
+    withErrors(res, log, async () => {
+      const summary: SeasonSummaryModel = {
+        sessions: await OfferingRow.count(),
+        signups: await SignupRow.count(),
+        completions: await CompletionRow.count(),
+      };
+      res.json(summary);
+    });
+  });
+
+  // Starts a new training season: removes every session, registration, wait list place and completion.
+  // Course settings and prerequisites are kept.
+  app.post('/api/admin/season/reset', async (req, res) => {
+    if (!isAdmin(req, res)) return;
+    withErrors(res, log, async () => {
+      if (req.body?.confirm !== NEW_SEASON_CONFIRMATION) {
+        res.status(400).json({ message: `Type "${NEW_SEASON_CONFIRMATION}" to confirm` });
+        return;
+      }
+      const removed = await sequelize.transaction(async transaction => ({
+        signups: await SignupRow.destroy({ where: {}, transaction }),
+        completions: await CompletionRow.destroy({ where: {}, transaction }),
+        sessions: await OfferingRow.destroy({ where: {}, transaction }),
+      }));
+      log.warn(`${req.session.auth!.email} started a new training season`, removed);
+      res.json({ message: 'OK', removed });
     });
   });
 

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Alert, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, IconButton, ListItem, ListItemButton, ListItemText, Stack, Tooltip } from '@mui/material';
+import { Alert, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, ListItem, ListItemButton, ListItemText, Stack, Tooltip } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { Link } from 'react-router-dom';
@@ -15,7 +15,8 @@ function dropText(registered: number, waiting: number) {
   return parts.join(' and ');
 }
 
-const LOCKED_REASON = "Can't change an offering after trainees have been marked complete";
+// Completions count towards later courses' prerequisites, so these sessions stay until the season is reset.
+const LOCKED_REASON = "Can't change or remove a session after trainees have been marked complete";
 
 export const OfferingListItem = (props: {
   store: AdminStore,
@@ -37,8 +38,6 @@ export const OfferingListItem = (props: {
   const [confirmRemove, setConfirmRemove] = React.useState(false);
   const [removing, setRemoving] = React.useState(false);
   const [removeError, setRemoveError] = React.useState<string>();
-  const [d4hConfirmed, setD4hConfirmed] = React.useState(false);
-  const needsD4h = completions > 0;
 
   if (editing) {
     return (
@@ -60,7 +59,7 @@ export const OfferingListItem = (props: {
     setRemoving(true);
     setRemoveError(undefined);
     try {
-      await store.deleteOffering(offering.id, d4hConfirmed);
+      await store.deleteOffering(offering.id);
       onChanged?.();
     } catch (err) {
       setRemoveError((err as Error).message);
@@ -76,8 +75,8 @@ export const OfferingListItem = (props: {
           <Tooltip title={locked ? LOCKED_REASON : props.settingsDirty ? SETTINGS_DIRTY_REASON : 'Edit start and size'}>
             <span><IconButton aria-label="Edit offering" disabled={locked || props.settingsDirty} onClick={() => setEditing(true)}><EditIcon /></IconButton></span>
           </Tooltip>
-          <Tooltip title="Remove session">
-            <span><IconButton edge="end" aria-label="Remove session" onClick={() => { setRemoveError(undefined); setD4hConfirmed(false); setConfirmRemove(true); }}><DeleteIcon /></IconButton></span>
+          <Tooltip title={locked ? LOCKED_REASON : 'Remove session'}>
+            <span><IconButton edge="end" aria-label="Remove session" disabled={locked} onClick={() => { setRemoveError(undefined); setConfirmRemove(true); }}><DeleteIcon /></IconButton></span>
           </Tooltip>
         </Stack>
       }
@@ -97,24 +96,11 @@ export const OfferingListItem = (props: {
               ? `${dropText(registered, waitlist.length)} will be dropped from this session. They won't be notified.`
               : 'Nobody is registered for this session.'}
           </DialogContentText>
-          {needsD4h && (
-            <>
-              <Alert severity="warning" sx={{ mt: 2 }}>
-                {completions} {completions === 1 ? 'trainee was' : 'trainees were'} marked complete. Their completions will be deleted,
-                so this app will no longer count them as having taken {course.title}.
-              </Alert>
-              <FormControlLabel
-                sx={{ mt: 1 }}
-                control={<Checkbox checked={d4hConfirmed} disabled={removing} onChange={e => setD4hConfirmed(e.target.checked)} />}
-                label="I've entered this roster into D4H"
-              />
-            </>
-          )}
           {removeError && <Alert severity="error" sx={{ mt: 2 }}>{removeError}</Alert>}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setConfirmRemove(false)} disabled={removing}>Cancel</Button>
-          <Button color="error" variant="contained" onClick={remove} disabled={removing || (needsD4h && !d4hConfirmed)}>{removing ? 'Removing...' : 'Remove'}</Button>
+          <Button color="error" variant="contained" onClick={remove} disabled={removing}>{removing ? 'Removing...' : 'Remove'}</Button>
         </DialogActions>
       </Dialog>
     </ListItem>

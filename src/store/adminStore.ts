@@ -3,6 +3,7 @@ import Store, { SessionTask } from ".";
 import UserModel from "../api-models/userModel";
 import { CourseModel, CourseSettingsModel } from "../api-models/courseModel";
 import { OfferingUpdateModel } from "../api-models/offeringModel";
+import { SeasonSummaryModel } from "../api-models/seasonModel";
 import CourseStore from "./courseStore";
 
 class AdminStore {
@@ -80,9 +81,28 @@ class AdminStore {
     await this.store.loadOfferings();
   }
 
-  async deleteOffering(offeringId: string, d4hConfirmed: boolean) {
-    const response = await fetch(`/api/admin/offerings/${offeringId}?d4hConfirmed=${d4hConfirmed}`, { method: 'DELETE' });
+  async deleteOffering(offeringId: string) {
+    const response = await fetch(`/api/admin/offerings/${offeringId}`, { method: 'DELETE' });
     if (!response.ok) throw new Error((await response.json()).message ?? 'Failed to remove');
+    await this.store.loadOfferings();
+  }
+
+  async getSeasonSummary(): Promise<SeasonSummaryModel> {
+    const response = await fetch('/api/admin/season');
+    if (!response.ok) throw new Error((await response.json()).message ?? 'Failed to load');
+    return response.json();
+  }
+
+  // Removes every session, registration and completion. `confirm` must be NEW_SEASON_CONFIRMATION.
+  async startNewSeason(confirm: string) {
+    const response = await fetch('/api/admin/season/reset', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ confirm })
+    });
+    if (!response.ok) throw new Error((await response.json()).message ?? 'Failed to start a new season');
     await this.store.loadOfferings();
   }
 

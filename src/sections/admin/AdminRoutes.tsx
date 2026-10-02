@@ -9,6 +9,7 @@ import TraineePageWrapper from './TraineePageWrapper';
 import CoursePage from './CoursePage';
 import CourseStore from '../../store/courseStore';
 import RosterPage from './RosterPage';
+import HelpPage from './HelpPage';
 
 class AdminFactory {
   rootStore?: Store;
@@ -35,6 +36,7 @@ export const AdminRoutes = (props: {
       <Route index element={<Navigate to="/admin" />} />
       <Route path="/admin">
         <Route index element={<AdminHomePage store={adminStore} />} />
+        <Route path="help" element={<HelpPage />} />
         <Route path="trainees" element={<TraineeListPage store={adminStore} /> } />
         <Route path="trainees/:email" element={<TraineePageWrapper store={adminStore} />}>
           <Route index element={<></>} />
