@@ -45,6 +45,7 @@ export function addAdminApi(app: Express, db: DBRepo, workspaceClient: Workspace
     if (!isAdmin(req, res)) return;
     withErrors(res, log, async () => {
       const dbRows = await db.getSignupsForCourse(req.params.courseId);
+      // Class members by name, then the wait list in sign-up order.
       const rows :SignupModel[] = dbRows.map(r => {
         const t = workspaceClient.getUserFromEmail(r.traineeEmail);
         return {
@@ -53,8 +54,12 @@ export function addAdminApi(app: Express, db: DBRepo, workspaceClient: Workspace
           traineeEmail: r.traineeEmail,
           traineeName: t?.name?.fullName ?? r.traineeEmail,
           traineePhone: t?.phones?.find(f => f.type === 'mobile')?.value,
+          onWaitList: !!r.onWaitList,
         };
-      }).sort((a,b) => a.traineeName.localeCompare(b.traineeName));
+      }).sort((a,b) => {
+        if (a.onWaitList !== b.onWaitList) return a.onWaitList ? 1 : -1;
+        return a.onWaitList ? Number(a.id) - Number(b.id) : a.traineeName.localeCompare(b.traineeName);
+      });
 
       res.json(rows);
     });
@@ -107,9 +112,14 @@ export function addAdminApi(app: Express, db: DBRepo, workspaceClient: Workspace
         return;
       }
 
-      await offering.update(update);
-      log.info(`${req.session.auth!.email} updated offering ${offering.id}`, req.body);
-      res.json({ message: 'OK' });
+      // Any new spots go to the wait list, in order.
+      const promoted = await sequelize.transaction(async transaction => {
+        await offering.update(update, { transaction });
+        const registered = (await db.getSignupsForOffering(offering.id + '', transaction)).filter(s => !s.onWaitList).length;
+        return db.promoteFromWaitlist(offering.id, update.capacity - registered, transaction);
+      });
+      log.info(`${req.session.auth!.email} updated offering ${offering.id}`, { ...req.body, promoted });
+      res.json({ message: 'OK', promoted });
     });
   });
 
@@ -131,6 +141,30 @@ export function addAdminApi(app: Express, db: DBRepo, workspaceClient: Workspace
       const offering = await OfferingRow.create({ courseId, ...update });
       log.info(`${req.session.auth!.email} added offering ${offering.id} for ${courseId}`, req.body);
       res.json({ id: offering.id + '' });
+    });
+  });
+
+  // Moves a trainee from the wait list into the class. Like an admin registering a trainee, this can
+  // put the class over its size (overflow); the size itself isn't changed.
+  app.post('/api/admin/signups/:signupId/promote', async (req, res) => {
+    if (!isAdmin(req, res)) return;
+    withErrors(res, log, async () => {
+      const signup = await SignupRow.findByPk(req.params.signupId);
+      if (!signup) {
+        res.status(404).json({ message: `Signup ${req.params.signupId} not found` });
+        return;
+      }
+      if (!signup.onWaitList) {
+        res.status(400).json({ message: `${signup.traineeEmail} is already in the class` });
+        return;
+      }
+
+      const offering = (await OfferingRow.findByPk(signup.offeringId))!;
+      const registered = (await db.getSignupsForOffering(offering.id + '')).filter(s => !s.onWaitList).length;
+      await signup.update({ onWaitList: false });
+      const overflow = registered >= offering.capacity;
+      log.info(`${req.session.auth!.email} moved ${signup.traineeEmail} from the wait list into offering ${signup.offeringId}`, { capacity: offering.capacity, overflow });
+      res.json({ message: 'OK', overflow });
     });
   });
 

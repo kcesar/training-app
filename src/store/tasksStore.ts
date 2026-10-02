@@ -13,10 +13,11 @@ export interface TaskProgress<T extends TrainingTask> {
   registrations: {[offeringId:string]: {
     status: 'registered'|'waiting',
     isPast?: boolean,
+    waitlistPosition?: number,
   }},
 }
 
-export type RegistrationAction = 'register'|'leave';
+export type RegistrationAction = 'register'|'waitlist'|'leave';
 
 class TasksStore {
   private store: Store;
@@ -77,10 +78,19 @@ class TasksStore {
       body: `Register for ${this.selected?.task.title} on ${formatDate(offering.startAt, 'MMM do')}?`,
     };
 
+    if (action === 'waitlist') {
+      this.registerPrompt.actionText = 'Join Wait List';
+      this.registerPrompt.title = 'Join Wait List';
+      this.registerPrompt.body = `${this.selected?.task.title} on ${formatDate(offering.startAt, 'MMM do')} is full. Join the wait list? You'll be #${offering.waiting + 1} in line, and an admin will move you into the class if a spot opens.`;
+    }
+
     if (action === 'leave') {
-      this.registerPrompt.actionText = 'Leave';
-      this.registerPrompt.title = 'Leave';
-      this.registerPrompt.body = `Give up your spot in ${this.selected?.task.title} on ${formatDate(offering.startAt, 'MMM do')}?`;
+      const waiting = this.selected?.registrations[offering.id]?.status === 'waiting';
+      this.registerPrompt.actionText = waiting ? 'Leave Wait List' : 'Leave';
+      this.registerPrompt.title = waiting ? 'Leave Wait List' : 'Leave';
+      this.registerPrompt.body = waiting
+        ? `Give up your place on the wait list for ${this.selected?.task.title} on ${formatDate(offering.startAt, 'MMM do')}?`
+        : `Give up your spot in ${this.selected?.task.title} on ${formatDate(offering.startAt, 'MMM do')}?`;
     }
   }
 

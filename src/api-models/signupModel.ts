@@ -4,4 +4,5 @@ export interface SignupModel {
   traineeEmail: string,
   traineeName: string,
   traineePhone?: string,
+  onWaitList: boolean,
 }

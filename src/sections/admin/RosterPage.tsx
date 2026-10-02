@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Alert, Box, Button, Checkbox, Container, List, ListItem, ListItemIcon, ListItemText, Snackbar, Stack, Typography } from "@mui/material";
+import { Alert, Box, Button, Checkbox, Container, List, ListItem, ListItemIcon, ListItemText, ListSubheader, Snackbar, Stack, Typography } from "@mui/material";
 import { observer } from "mobx-react";
 import { Link, useParams } from "react-router-dom";
 import { format as formatDate, isPast } from 'date-fns';
@@ -37,6 +37,7 @@ export const RosterPage = (props: {
 
   if (!offering) return (<MainChrome>Loading...</MainChrome>);
   const roster = courseStore.getRoster(offering.id);
+  const waitlist = courseStore.getWaitlist(offering.id);
   return (
     <MainChrome>
       <Container>
@@ -44,7 +45,7 @@ export const RosterPage = (props: {
         <Box sx={{mx:1, my:2}}>
           <Typography variant="h6" component="div">{formatOfferingDateTimes(offering)}</Typography>
           <Typography variant="body2" color={roster.length > offering.capacity ? 'warning.main' : 'text.secondary'}>
-            {formatRegistrationStatus(roster.length, offering.capacity)}
+            {formatRegistrationStatus(roster.length, offering.capacity, waitlist.length)}
           </Typography>
         </Box>
         <Stack spacing={2} direction="row">
@@ -77,6 +78,20 @@ export const RosterPage = (props: {
             </ListItem>
           ))}
         </List>
+        {waitlist.length > 0 && (
+          <List sx={{ bgcolor: 'background.paper', mt: 2 }} subheader={<ListSubheader component="div">Wait list</ListSubheader>}>
+            {waitlist.map((s, i) => (
+              <ListItem key={s.id} secondaryAction={
+                <Button size="small" variant="outlined" disabled={courseStore.editingCompleted} onClick={() => courseStore.promote(s)}>
+                  {roster.length < offering.capacity ? 'Add to class' : 'Add (overflow)'}
+                </Button>
+              }>
+                <ListItemIcon><Typography color="text.secondary">#{i + 1}</Typography></ListItemIcon>
+                <ListItemText primary={s.traineeName} sx={{ pr: 20 }} />
+              </ListItem>
+            ))}
+          </List>
+        )}
         <Snackbar
           open={courseStore.snackOpen}
           autoHideDuration={courseStore.snackTime}

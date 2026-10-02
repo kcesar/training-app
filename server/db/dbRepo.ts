@@ -1,4 +1,4 @@
-import { Sequelize } from 'sequelize';
+import { Op, Sequelize, Transaction } from 'sequelize';
 import { CourseModel } from '../../src/api-models/courseModel';
 import { defaultCourses } from '../defaultCourses';
 import { CompletionRow } from './completionRow';
@@ -7,7 +7,7 @@ import { SettingRow } from './settingRow';
 import { SignupRow } from './signupRow';
 import { utcDate } from './dates';
 
-type OfferingWithSignedUp = OfferingRow & { signedUp: number};
+type OfferingWithSignedUp = OfferingRow & { signedUp: number, waiting: number };
 type SignupWithOffering = SignupRow & { offering: OfferingRow };
 
 const COURSES_SETTING = 'courses';
@@ -59,21 +59,39 @@ export default class DBRepo {
     const counts = await SignupRow.findAll({
       attributes: [
         'offeringId',
+        'onWaitList',
         [Sequelize.fn('COUNT', '1'), 'signups']
       ],
-      group: 'offeringId'
+      group: ['offeringId', 'onWaitList']
     });
 
+    rows.forEach(r => { r.signedUp = 0; r.waiting = 0; });
     counts.forEach(c => {
-      lookup[c.offeringId].signedUp = c.getDataValue('signups')
+      const row = lookup[c.offeringId];
+      if (!row) return;
+      const count = Number(c.getDataValue('signups'));
+      if (c.onWaitList) row.waiting = count; else row.signedUp = count;
     });
 
     return rows;
   }
 
-  async getSignupsForOffering(id: string) {
-    const rows = await SignupRow.findAll({ where: { offeringId: id }});
+  // Ordered by sign-up, which is also wait list order.
+  async getSignupsForOffering(id: string, transaction?: Transaction) {
+    const rows = await SignupRow.findAll({ where: { offeringId: id }, order: [['id', 'ASC']], transaction });
     return rows;
+  }
+
+  async getWaitlistPosition(signup: SignupRow) {
+    return SignupRow.count({ where: { offeringId: signup.offeringId, onWaitList: true, id: { [Op.lte]: signup.id } } });
+  }
+
+  // Moves the first `count` people on the wait list into the class. Returns their emails.
+  async promoteFromWaitlist(offeringId: number, count: number, transaction: Transaction) {
+    if (count <= 0) return [];
+    const waiting = (await this.getSignupsForOffering(offeringId + '', transaction)).filter(s => s.onWaitList).slice(0, count);
+    for (const s of waiting) await s.update({ onWaitList: false }, { transaction });
+    return waiting.map(s => s.traineeEmail);
   }
 
   async getSignupsForTrainee(email: string) {

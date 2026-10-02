@@ -12,7 +12,8 @@ export const offeringToViewModel = (api: OfferingModel) => {
     ...api,
     startAt: parseISO(api.startAt),
     doneAt: parseISO(api.doneAt),
-    signedUp: api.signedUp ?? 0
+    signedUp: api.signedUp ?? 0,
+    waiting: api.waiting ?? 0,
   } as OfferingViewModel);
 }
 
@@ -36,9 +37,9 @@ export function formatOfferingDateTimes(o: Pick<OfferingViewModel, 'startAt'|'do
   return formatDate(o.startAt, dayTime) + ' – ' + formatDate(o.doneAt, isSameDay(o.startAt, o.doneAt) ? 'h:mm a' : dayTime);
 }
 
-// e.g. "12 of 30 registered · 18 spots open"
-export function formatRegistrationStatus(registered: number, capacity: number) {
+// e.g. "12 of 30 registered · 18 spots open", "30 of 30 registered · Full · 4 waiting"
+export function formatRegistrationStatus(registered: number, capacity: number, waiting = 0) {
   const open = capacity - registered;
   const detail = open > 0 ? `${open} ${open === 1 ? 'spot' : 'spots'} open` : open === 0 ? 'Full' : `${-open} over capacity`;
-  return `${registered} of ${capacity} registered · ${detail}`;
+  return `${registered} of ${capacity} registered · ${detail}` + (waiting > 0 ? ` · ${waiting} waiting` : '');
 }

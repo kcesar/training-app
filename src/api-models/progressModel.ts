@@ -5,5 +5,7 @@ export interface ProgressModel {
   registrations: { [offeringId:string]: {
     status: 'registered'|'waiting',
     isPast?: boolean,
+    // 1-based place in line, for wait list signups
+    waitlistPosition?: number,
   }},
 }

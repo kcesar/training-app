@@ -28,17 +28,16 @@ export function addTrainingApi(app: Express, db: DBRepo, log: Logger) {
 
     let progress :{ [courseId: string]: ProgressModel } = {};
 
-    progress = (await db.getSignupsForTrainee(email)).reduce((accum, cur) => ({
-      ...accum,
-      [cur.offering.courseId]: {
-        ...accum[cur.offering.courseId],
-        status: (accum[cur.offering.courseId]?.status === 'registered' || !cur.onWaitList) ? 'registered' : 'waiting',
-        registrations: {
-          ...accum[cur.offeringId]?.registrations ?? {},
-          [cur.offeringId]: { status: 'registered', isPast: isPast(utcDate(cur.offering.startAt))}
-        },
-      }
-    }), progress);
+    for (const signup of await db.getSignupsForTrainee(email)) {
+      const courseId = signup.offering.courseId;
+      const course = progress[courseId] ?? ({ courseId, status: 'waiting', registrations: {} } as unknown as ProgressModel);
+      const isPastOffering = isPast(utcDate(signup.offering.startAt));
+      course.registrations[signup.offeringId] = signup.onWaitList
+        ? { status: 'waiting', isPast: isPastOffering, waitlistPosition: await db.getWaitlistPosition(signup) }
+        : { status: 'registered', isPast: isPastOffering };
+      if (!signup.onWaitList) course.status = 'registered';
+      progress[courseId] = course;
+    }
 
     progress = (await db.getCompleted(email)).reduce((accum, cur) => ({
       ...accum,
@@ -74,6 +73,7 @@ export function addTrainingApi(app: Express, db: DBRepo, log: Logger) {
             startAt: utcDate(cur.startAt).toISOString(),
             doneAt: utcDate(cur.doneAt).toISOString(),
             signedUp: cur.signedUp,
+            waiting: cur.waiting,
           }
         ]
       })
@@ -102,12 +102,23 @@ export function addTrainingApi(app: Express, db: DBRepo, log: Logger) {
           res.status(400).json({message:'Already registered for this course'});
           return;
         }
-        if (existing.length >= offering.capacity && !isAdmin) {
-          res.status(400).json({message:'Course is full'});
+
+        // A spot is only open to new trainees when nobody is already waiting for one.
+        const registered = existing.filter(s => !s.onWaitList).length;
+        const waiting = existing.length - registered;
+        const hasOpenSpot = registered < offering.capacity && waiting === 0;
+
+        let onWaitList: boolean;
+        if (hasOpenSpot || (isAdmin && body.action === 'register')) {
+          onWaitList = false;
+        } else if (body.action === 'waitlist') {
+          onWaitList = true;
+        } else {
+          res.status(400).json({message: waiting > 0 ? 'This session has a wait list. Join the wait list instead.' : 'Course is full. Join the wait list instead.'});
           return;
         }
-        const row = await SignupRow.create({ offeringId: offering.id, traineeEmail: body.traineeEmail });
-        res.json({ result: row });  
+        const row = await SignupRow.create({ offeringId: offering.id, traineeEmail: body.traineeEmail, onWaitList });
+        res.json({ result: row });
       } else if (body.action === 'leave') {
         let existing = await (await db.getSignupsForOffering(req.params.id)).find(f => f.traineeEmail === body.traineeEmail);
         if (!existing) {

@@ -64,7 +64,9 @@ export const CourseContent = observer((props: {
                 course={settings}
                 settingsDirty={settingsDirty}
                 offering={o}
-                registered={course.signups.filter(f => f.offeringId === (o.id + '')).length}
+                registered={courseStore.getRoster(o.id + '').length}
+                waitlist={courseStore.getWaitlist(o.id + '').map(s => s.traineeName)}
+                onChanged={() => courseStore.loadSignups()}
                 completions={courseStore.offeringCompletions[o.id + ''] ?? 0}
               />
             ))}

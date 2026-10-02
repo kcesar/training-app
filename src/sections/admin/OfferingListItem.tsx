@@ -8,6 +8,13 @@ import { SessionTask } from '../../store';
 import OfferingViewModel, { formatOfferingDatesShort, formatRegistrationStatus } from '../../models/offeringViewModel';
 import OfferingEditor, { SETTINGS_DIRTY_REASON } from './OfferingEditor';
 
+function dropText(registered: number, waiting: number) {
+  const parts = [];
+  if (registered > 0) parts.push(`${registered} registered ${registered === 1 ? 'trainee' : 'trainees'}`);
+  if (waiting > 0) parts.push(`${waiting} on the wait list`);
+  return parts.join(' and ');
+}
+
 const LOCKED_REASON = "Can't change an offering after trainees have been marked complete";
 
 export const OfferingListItem = (props: {
@@ -15,10 +22,14 @@ export const OfferingListItem = (props: {
   course: SessionTask,
   offering: OfferingViewModel,
   registered: number,
+  // Names on the wait list, in order
+  waitlist: string[],
   completions: number,
+  // Called after the session is changed or removed, so signups can be reloaded
+  onChanged?: () => void,
   settingsDirty?: boolean,
 }) => {
-  const { store, course, offering, registered, completions } = props;
+  const { store, course, offering, registered, waitlist, completions, onChanged } = props;
   const locked = completions > 0;
   const name = `${course.title} ${formatOfferingDatesShort(offering)}`;
 
@@ -34,11 +45,12 @@ export const OfferingListItem = (props: {
       <OfferingEditor
         course={course}
         registered={registered}
+        waitlist={waitlist}
         initialStart={offering.startAt}
         initialCapacity={offering.capacity}
         saveLabel="Save"
         settingsDirty={props.settingsDirty}
-        onSave={async update => { await store.updateOffering(offering.id, update); setEditing(false); }}
+        onSave={async update => { await store.updateOffering(offering.id, update); setEditing(false); onChanged?.(); }}
         onCancel={() => setEditing(false)}
       />
     );
@@ -49,6 +61,7 @@ export const OfferingListItem = (props: {
     setRemoveError(undefined);
     try {
       await store.deleteOffering(offering.id, d4hConfirmed);
+      onChanged?.();
     } catch (err) {
       setRemoveError((err as Error).message);
       setRemoving(false);
@@ -72,7 +85,7 @@ export const OfferingListItem = (props: {
       <ListItemButton component={Link} to={offering.id + ''} sx={{ pr: 14 }}>
         <ListItemText
           primary={name}
-          secondary={formatRegistrationStatus(registered, offering.capacity) + (locked ? ` · ${completions} completed` : '')}
+          secondary={formatRegistrationStatus(registered, offering.capacity, waitlist.length) + (locked ? ` · ${completions} completed` : '')}
           secondaryTypographyProps={{ color: registered > offering.capacity ? 'warning.main' : 'text.secondary' }}
         />
       </ListItemButton>
@@ -80,8 +93,8 @@ export const OfferingListItem = (props: {
         <DialogTitle>Remove {name}?</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            {registered > 0
-              ? `${registered} registered ${registered === 1 ? 'trainee' : 'trainees'} will be dropped from this session. They won't be notified.`
+            {registered + waitlist.length > 0
+              ? `${dropText(registered, waitlist.length)} will be dropped from this session. They won't be notified.`
               : 'Nobody is registered for this session.'}
           </DialogContentText>
           {needsD4h && (

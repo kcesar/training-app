@@ -33,17 +33,24 @@ const PaperworkTaskContent = ({ progress }: { progress: TaskProgress<PaperworkTa
 function getSecondaryContent(progress: TaskProgress<SessionTask>, offering: OfferingViewModel, isAdmin: boolean, register: RegisterHandler) {
   if (!isFuture(offering.startAt)) return undefined;
 
-  const slotsText = `${offering.signedUp}/${offering.capacity} filled`; //+ (s.waiting ? `, ${s.waiting} waiting` : '')
+  let slotsText = `${offering.signedUp}/${offering.capacity} filled` + (offering.waiting ? `, ${offering.waiting} waiting` : '');
 
   let registerButton: JSX.Element|undefined = undefined;
+  // Wait list places count too: a trainee can only be lined up for one future session at a time.
   const futureRegistrationCount = Object.values(progress.registrations).filter(f => !f.isPast).length;
+  const registration = progress.registrations[offering.id];
 
-  if (progress.registrations[offering.id]?.status === 'registered') {
+  if (registration?.status === 'registered') {
     registerButton = (<Button size="small" color="primary" variant="outlined" disabled={false} onClick={() => register(offering, 'leave')}>Leave</Button>);
-  } else if (!progress.completed && ((offering.signedUp < offering.capacity) || isAdmin) && futureRegistrationCount === 0) {
-    const registerText = true ? 'Register' : 'Join Wait List';
-    const registerAction = 'register';
-    const actionEnabled = isAdmin || (registerAction === 'register' && progress.blockedBy.length === 0);
+  } else if (registration?.status === 'waiting') {
+    slotsText = `You're #${registration.waitlistPosition} on the wait list`;
+    registerButton = (<Button size="small" color="primary" variant="outlined" onClick={() => register(offering, 'leave')}>Leave Wait List</Button>);
+  } else if (!progress.completed && futureRegistrationCount === 0) {
+    // Open spots go to the wait list first. Admins can still add trainees straight into the class.
+    const hasOpenSpot = offering.signedUp < offering.capacity && !offering.waiting;
+    const registerAction: RegistrationAction = (hasOpenSpot || isAdmin) ? 'register' : 'waitlist';
+    const registerText = registerAction === 'register' ? 'Register' : 'Join Wait List';
+    const actionEnabled = isAdmin || progress.blockedBy.length === 0;
     registerButton = (<Button size="small" color="primary" variant="outlined" disabled={!actionEnabled} onClick={() => register(offering, registerAction)}>{registerText}</Button>);
   }
   return (<Box sx={{ display: 'flex', justifyContent:'space-between', alignItems: 'center'}}>

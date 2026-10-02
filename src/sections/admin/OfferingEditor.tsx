@@ -13,6 +13,8 @@ export const SETTINGS_DIRTY_REASON = 'Save or reset the course settings before c
 export const OfferingEditor = (props: {
   course: SessionTask,
   registered: number,
+  // Names on the wait list, in order. Any new spots are filled from it when saving.
+  waitlist?: string[],
   initialStart: Date|null,
   initialCapacity: number,
   saveLabel: string,
@@ -32,6 +34,7 @@ export const OfferingEditor = (props: {
   const schedule = start && !isNaN(start.getTime()) ? scheduleOffering(course, start) : undefined;
   const size = Number(capacity);
   const sizeValid = Number.isInteger(size) && size >= 1;
+  const promoting = sizeValid ? (props.waitlist ?? []).slice(0, Math.max(0, size - registered)) : [];
 
   const save = async () => {
     setSaving(true);
@@ -92,6 +95,11 @@ export const OfferingEditor = (props: {
         <Alert severity="warning" sx={{ mt: 1 }}>
           {registered} trainees are already registered, which is more than the new size of {size}.
           Nobody will be removed, but trainees won't be able to register until enough of them leave.
+        </Alert>
+      )}
+      {promoting.length > 0 && (
+        <Alert severity="info" sx={{ mt: 1 }}>
+          Saving will move {promoting.length} {promoting.length === 1 ? 'trainee' : 'trainees'} from the wait list into the class: {promoting.join(', ')}.
         </Alert>
       )}
       {props.settingsDirty && <Alert severity="info" sx={{ mt: 1 }}>{SETTINGS_DIRTY_REASON}</Alert>}

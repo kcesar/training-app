@@ -305,8 +305,27 @@ class CourseStore {
     };
   }
 
+  // Trainees in the class (not the wait list).
   getRoster(offeringId: string) {
-    return this.course?.signups?.filter(s => s.offeringId === offeringId) ?? [];
+    return this.course?.signups?.filter(s => s.offeringId === offeringId && !s.onWaitList) ?? [];
+  }
+
+  // Wait list in order.
+  getWaitlist(offeringId: string) {
+    return this.course?.signups?.filter(s => s.offeringId === offeringId && s.onWaitList) ?? [];
+  }
+
+  // Moves a trainee from the wait list into the class, even if it's full (overflow). The size isn't changed.
+  @action.bound
+  async promote(signup: SignupViewModel) {
+    try {
+      const response = await fetch(`/api/admin/signups/${signup.id}/promote`, { method: 'POST' });
+      if (!response.ok) throw new Error((await response.json()).message ?? 'Failed to add to class');
+      await Promise.all([this.loadSignups(), this.store.reloadOfferings()]);
+      this.showSnackBar(`${signup.traineeName} moved into the class`, 'success');
+    } catch (err) {
+      this.showSnackBar((err as Error).message, 'error');
+    }
   }
 }
 

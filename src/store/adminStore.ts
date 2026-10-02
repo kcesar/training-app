@@ -64,6 +64,10 @@ class AdminStore {
     await this.store.loadOfferings();
   }
 
+  reloadOfferings() {
+    return this.store.loadOfferings();
+  }
+
   async createOffering(courseId: string, offering: OfferingUpdateModel) {
     const response = await fetch(`/api/admin/courses/${courseId}/offerings`, {
       method: 'POST',
